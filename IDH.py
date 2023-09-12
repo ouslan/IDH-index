@@ -65,13 +65,10 @@ class IDH:
 
         # calculate index
         edu_index = (value1/15 + value2/18) / 2
-        return edu_index
-
-          
+        return edu_index       
     
     def idh_index(self):
         return self.data['IDH'].mean()
-
 
 if __name__ == "__main__":
     idh = IDH()
