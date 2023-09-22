@@ -107,5 +107,5 @@ class IndexIDH:
 
 if __name__ == "__main__":
     # # generate csv file for 2009-2020 for the education index
-    idh = IDH()
+    idh = IndexIDH()
     idh.get_data()
