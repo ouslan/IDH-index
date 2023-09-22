@@ -1,4 +1,4 @@
-from IDH import *
+from IDH import IndexIDH
 from time import sleep
 from tqdm import tqdm
 from termcolor import colored
