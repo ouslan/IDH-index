@@ -2,18 +2,23 @@ import pandas as pd
 import numpy as np
 from urllib.request import urlretrieve
 from tqdm import tqdm
+from termcolor import colored
 import zipfile
 import os
 
 class IDH:
 
     def get_data(self, range_years):
+        print((colored('Education Data', 'blue')).center(50))
+        print('|------------------------------------|')
         # get data from ACS PUMS 5-year
         for year in range(int(range_years[0]), int(range_years[1])+1):
             url = f'https://www2.census.gov/programs-surveys/acs/data/pums/{year}/5-Year/csv_ppr.zip'
             file_name = f'Data/raw_{year}.zip'
 
         # progress bar
+            # green color
+            print(colored(f'Downloading PUMS Data {year}', 'green'))
             with tqdm(unit='B', unit_scale=True, miniters=1, desc=url.split('/')[-1]) as t:
                 urlretrieve(url, file_name, reporthook=lambda blocknum, blocksize, total: t.update(blocknum * blocksize - t.n))
 
@@ -21,7 +26,7 @@ class IDH:
             with zipfile.ZipFile(file_name, 'r') as zip_ref:
                 zip_ref.extractall('Data')
 
-    # remove the zip file and pdf
+        # remove the zip file and pdf
             for file in os.listdir('Data'):
                 if file.endswith('.pdf'):
                     os.remove(f'Data/{file}')
