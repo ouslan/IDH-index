@@ -4,12 +4,16 @@ import world_bank_data as wb
 from urllib.request import urlretrieve
 from termcolor import colored
 from tqdm import tqdm
+from termcolor import colored
 import zipfile
 import os
 
 class IndexIDH:
 
-    def get_data(self, range_years=['2009', '2021']):
+
+    def get_data(self, range_years):
+        print((colored('Education Data', 'blue')).center(50))
+        print('|------------------------------------|')
         # get data from ACS PUMS 5-year
         for year in range(int(range_years[0]), int(range_years[1])+1):
             url = f'https://www2.census.gov/programs-surveys/acs/data/pums/{year}/5-Year/csv_ppr.zip'
@@ -24,7 +28,7 @@ class IndexIDH:
             with zipfile.ZipFile(file_name, 'r') as zip_ref:
                 zip_ref.extractall('Data')
 
-    # remove the zip file and pdf
+        # remove the zip file and pdf
             for file in os.listdir('Data'):
                 if file.endswith('.pdf'):
                     os.remove(f'Data/{file}')
@@ -109,7 +113,6 @@ class IndexIDH:
     
     def idh_index(self):
         return self.data['IDH'].mean()
-
 
 if __name__ == "__main__":
     # # generate csv file for 2009-2020 for the education index
