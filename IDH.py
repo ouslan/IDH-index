@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import world_bank_data as wb
 from urllib.request import urlretrieve
+from termcolor import colored
 from tqdm import tqdm
 import zipfile
 import os
@@ -15,6 +16,7 @@ class IndexIDH:
             file_name = f'Data/raw_{year}.zip'
 
         # progress bar
+            print(colored(f'Downloading {year} data', 'yellow'))
             with tqdm(unit='B', unit_scale=True, miniters=1, desc=url.split('/')[-1]) as t:
                 urlretrieve(url, file_name, reporthook=lambda blocknum, blocksize, total: t.update(blocknum * blocksize - t.n))
 
@@ -34,9 +36,10 @@ class IndexIDH:
                     continue
         # merge all the data
         edu_index = []
+        print(colored('Merging data and optimizing', 'green'))
         for year in range(2009, 2021):
-            print(year)
-            edu_index.append(idh.edu_index(year))
+            print(colored(f'Processing {year} data', 'yellow'))
+            edu_index.append(IndexIDH().edu_index(year))
         # generate a dataframe for the education index
         edu_index = pd.DataFrame(edu_index, columns=['edu_index'])
         edu_index['year'] = range(2009, 2021)
@@ -60,14 +63,17 @@ class IndexIDH:
         return pr_health
 
     def income_index(self):
-        return self.data['Income'].mean()
+        return "Still under development"
     
     def edu_index(self, year):
         # check if edu index is already calculated
         if os.path.exists('Data/edu_index.csv'):
             data = pd.read_csv('Data/edu_index.csv')
             # return the index value for that year
-            return data[data['year'] == year]['edu_index'].values[0]
+            try:
+                return data[data['year'] == year]['edu_index'].values[0]
+            except (IndexError):
+                return np.nan
         else:
             try: 
                 data = f'Data/data_{year}_raw.csv'
