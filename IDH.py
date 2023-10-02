@@ -96,8 +96,17 @@ class IndexIDH:
             # merge the two dataframes
             inc_df = atlas_df.merge(gni_df, on='Year')
             inc_df['income_index_temp'] = inc_df['atlas'] / inc_df['gni']
-            inc_df['income_index'] = inc_df['income_index_temp'].astype(float)
-            return inc_df
+            inc_df['income_index_temp'] = inc_df['income_index_temp'].astype(float)
+            inc_df['Year'] = inc_df['Year'].astype(int)
+
+            # merge the income index with the pnb.csv file
+            pnb = pd.read_csv('Data/pnb.csv')
+            merge_df = inc_df.merge(pnb, on='Year', how='left')
+            merge_df = merge_df.dropna()
+            merge_df.reset_index(inplace=True)
+            # drob the index column
+            merge_df.drop(['index'], axis=1, inplace=True)
+            return merge_df
 
     
     def edu_index(self, year):
