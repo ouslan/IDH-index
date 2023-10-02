@@ -56,15 +56,25 @@ class IndexIDH:
                 continue
 
 
-    def health_index(self):
-        # get Life expectancy at birth, total (years) for Puerto Rico
-        pr_health = pd.DataFrame(wb.get_series('SP.DYN.LE00.IN', country='PR', simplify_index=True))
-        pr_health.reset_index(inplace=True)
-        pr_health.rename(columns={'SP.DYN.LE00.IN': 'health_index'}, inplace=True)
-        pr_health['health'] = pr_health['health_index'].astype(float)
-        pr_health['health_index'] = pr_health['health_index'].apply(lambda x: (x-20)/(85-20))
-        pr_health['health_index'] = pr_health['health_index'].astype(float)
-        return pr_health
+    def health_index(self, year):
+        if os.path.exists('Data/pr_health.csv'):
+            rt_health = pd.read_csv('Data/pr_health.csv')
+            rt_health = rt_health.loc[rt_health['Year'] == year].iat[0, 1]
+            return rt_health
+        else:
+            # get Life expectancy at birth, total (years) for Puerto Rico
+            pr_health = pd.DataFrame(wb.get_series('SP.DYN.LE00.IN', country='PR', simplify_index=True))
+            pr_health.reset_index(inplace=True)
+            pr_health.rename(columns={'SP.DYN.LE00.IN': 'health_index'}, inplace=True)
+            pr_health['health'] = pr_health['health_index'].astype(float)
+            pr_health['health_index'] = pr_health['health_index'].apply(lambda x: (x-20)/(85-20))
+            pr_health['health_index'] = pr_health['health_index'].astype(float)
+            # save in csv
+            pr_health.to_csv('Data/pr_health.csv', index=False)
+            # return helth index for year 
+            rt_health = rt_health.loc[rt_health['Year'] == year].iat[0, 1]
+            # return only the health index for the year
+            return rt_health
 
     def income_index(self):
         return "Still under development"
@@ -117,4 +127,4 @@ class IndexIDH:
 if __name__ == "__main__":
     # # generate csv file for 2009-2020 for the education index
     idh = IndexIDH()
-    idh.get_data()
+    print(idh.health_index(2019))

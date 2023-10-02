@@ -28,10 +28,15 @@ while True:
         os.system('clear')
     elif option == 3:
         idh = IndexIDH()
+        year = int(input("Enter a year: "))
+        os.system('clear')
         print("Calculating the health index")
         sleep(2)
-        print(colored(f"The health index is {idh.health_index()}", 'green'))
-        sleep(2)
+        if idh.health_index(year) is np.nan:
+            print(colored(f"ERROR: The year {year} is outside the range. Please try again",'red'))
+        else:
+            print(colored(f"The health index is {idh.health_index(year)}", 'blue'))
+        sleep(5)
         os.system('clear')
     elif option == 4:
         idh = IndexIDH()
