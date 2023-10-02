@@ -55,7 +55,6 @@ class IndexIDH:
             else:
                 continue
 
-
     def health_index(self, year):
         if os.path.exists('Data/pr_health.csv'):
             rt_health = pd.read_csv('Data/pr_health.csv')
@@ -77,7 +76,29 @@ class IndexIDH:
             return rt_health
 
     def income_index(self):
-        return "Still under development"
+        if os.path.exists('Data/income_index.csv'):
+            inc_df = pd.read_csv('Data/income_index.csv')
+            inc_df = inc_df.loc[inc_df['Year'] == 2019].iat[0, 1]
+            return inc_df
+        else:
+            # get atlas df from WB
+            atlas_df = pd.DataFrame(wb.get_series('NY.GNP.PCAP.CD', country='PR', simplify_index=True))
+            atlas_df.reset_index(inplace=True)
+            atlas_df.rename(columns={'NY.GNP.PCAP.CD': 'atlas'}, inplace=True)
+            atlas_df['atlas'] = atlas_df['atlas'].astype(float)
+
+            # get gni constant df from WB
+            gni_df = pd.DataFrame(wb.get_series('NY.GNP.PCAP.PP.KD', country='PR', simplify_index=True))
+            gni_df.reset_index(inplace=True)
+            gni_df.rename(columns={'NY.GNP.PCAP.PP.KD': 'gni'}, inplace=True)
+            gni_df['gni'] = gni_df['gni'].astype(float)
+
+            # merge the two dataframes
+            inc_df = atlas_df.merge(gni_df, on='Year')
+            inc_df['income_index_temp'] = inc_df['atlas'] / inc_df['gni']
+            inc_df['income_index'] = inc_df['income_index_temp'].astype(float)
+            return inc_df
+
     
     def edu_index(self, year):
         # check if edu index is already calculated
