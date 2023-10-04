@@ -16,44 +16,52 @@ class IndexIDH:
         print('|------------------------------------|')
         # get data from ACS PUMS 5-year
         for year in range(int(range_years[0]), int(range_years[1])+1):
-            url = f'https://www2.census.gov/programs-surveys/acs/data/pums/{year}/5-Year/csv_ppr.zip'
-            file_name = f'Data/raw_{year}.zip'
+            if os.path.exists(f'Data/data_{year}_raw.csv') or os.path.exists(f'Data/edu_index.csv'):
+                continue
+            else:
+                url = f'https://www2.census.gov/programs-surveys/acs/data/pums/{year}/5-Year/csv_ppr.zip'
+                file_name = f'Data/raw_{year}.zip'
 
-        # progress bar
-            print(colored(f'Downloading {year} data', 'yellow'))
-            with tqdm(unit='B', unit_scale=True, miniters=1, desc=url.split('/')[-1]) as t:
-                urlretrieve(url, file_name, reporthook=lambda blocknum, blocksize, total: t.update(blocknum * blocksize - t.n))
+            # progress bar
+                print(colored(f'Downloading {year} data', 'yellow'))
+                with tqdm(unit='B', unit_scale=True, miniters=1, desc=url.split('/')[-1]) as t:
+                    urlretrieve(url, file_name, reporthook=lambda blocknum, blocksize, total: t.update(blocknum * blocksize - t.n))
 
-        # unzip the file
-            with zipfile.ZipFile(file_name, 'r') as zip_ref:
-                zip_ref.extractall('Data')
+            # unzip the file
+                with zipfile.ZipFile(file_name, 'r') as zip_ref:
+                    zip_ref.extractall('Data')
 
-        # remove the zip file and pdf
+            # remove the zip file and pdf
+                for file in os.listdir('Data'):
+                    if file.endswith('.pdf'):
+                        os.remove(f'Data/{file}')
+                    elif file.endswith('.zip'):
+                        os.remove(f'Data/{file}')
+                    elif file.endswith('.csv') and not file.startswith('data') or file.startswith('pnb'):
+                        os.rename(f'Data/{file}', f'Data/data_{year}_raw.csv')
+                    else:
+                        continue
+        # merge all the data
+        if os.path.exists('Data/edu_index.csv'):
+            return ''
+        else:
+            edu_index = []
+            print(colored('Merging data and optimizing', 'green'))
+            for year in range(2009, 2022):
+                print(colored(f'Processing {year} data', 'yellow'))
+                edu_index.append(IndexIDH().edu_index(year))
+
+            # generate a dataframe for the education index
+            edu_index = pd.DataFrame(edu_index, columns=['edu_index'])
+            edu_index['year'] = range(2009, 2022)
+            edu_index.to_csv('Data/edu_index.csv', index=False)
+
+            # remove the raw data
             for file in os.listdir('Data'):
-                if file.endswith('.pdf'):
+                if file.endswith('_raw.csv'):
                     os.remove(f'Data/{file}')
-                elif file.endswith('.zip'):
-                    os.remove(f'Data/{file}')
-                elif file.endswith('.csv') and not file.startswith('data'):
-                    os.rename(f'Data/{file}', f'Data/data_{year}_raw.csv')
                 else:
                     continue
-        # merge all the data
-        edu_index = []
-        print(colored('Merging data and optimizing', 'green'))
-        for year in range(2009, 2021):
-            print(colored(f'Processing {year} data', 'yellow'))
-            edu_index.append(IndexIDH().edu_index(year))
-        # generate a dataframe for the education index
-        edu_index = pd.DataFrame(edu_index, columns=['edu_index'])
-        edu_index['year'] = range(2009, 2021)
-        edu_index.to_csv('Data/edu_index.csv', index=False)
-        # remove the raw data
-        for file in os.listdir('Data'):
-            if file.endswith('_raw.csv'):
-                os.remove(f'Data/{file}')
-            else:
-                continue
 
     def health_index(self, year):
         if os.path.exists('Data/pr_health.csv'):
@@ -68,10 +76,11 @@ class IndexIDH:
             pr_health['health'] = pr_health['health_index'].astype(float)
             pr_health['health_index'] = pr_health['health_index'].apply(lambda x: (x-20)/(85-20))
             pr_health['health_index'] = pr_health['health_index'].astype(float)
+            pr_health['Year'] = pr_health['Year'].astype(int)
             # save in csv
             pr_health.to_csv('Data/pr_health.csv', index=False)
-            # return helth index for year 
-            rt_health = rt_health.loc[rt_health['Year'] == year].iat[0, 1]
+            # return health index for year 
+            rt_health = pr_health.loc[pr_health['Year'] == year].iat[0, 1]
             # return only the health index for the year
             return rt_health
 
@@ -107,7 +116,6 @@ class IndexIDH:
             # drob the index column
             merge_df.drop(['index'], axis=1, inplace=True)
             return merge_df
-
     
     def edu_index(self, year):
         # check if edu index is already calculated
