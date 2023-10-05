@@ -53,7 +53,7 @@ class IndexIDH:
 
             # generate a dataframe for the education index
             edu_index = pd.DataFrame(edu_index, columns=['edu_index'])
-            edu_index['year'] = range(2009, 2022)
+            edu_index['Year'] = range(2009, 2022)
             edu_index.to_csv('Data/edu_index.csv', index=False)
 
             # remove the raw data
