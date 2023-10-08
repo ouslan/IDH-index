@@ -2,49 +2,37 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import pandas as pd
 
-def bbands(data, window=36, no_of_std=1):
-    rolling_mean = data.rolling(window).mean()
-    rolling_std  = data.rolling(window).std()
-    upper_band = rolling_mean + (rolling_std * no_of_std)
-    lower_band = rolling_mean - (rolling_std * no_of_std)
-    return rolling_mean, upper_band, lower_band
-
-
 class Graphs:
 
-    def __init__(self, index):
-        self.index = index
-        self.data = pd.read_csv(self.index)
+    def __init__(self, path, title):
+        self.path = pd.read_csv(path)
+        self.title = title
 
-    def gen_graph(self):
+    def plot_graph(self):
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=self.data['Year'], y=self.data['index'], name='Value Growth'))
-        fig.add_trace(go.Scatter(x=self.data['Year'], y=bbands(self.data['index'])[0], name='Mean'))
-        fig.add_trace(go.Scatter(x=self.data['Year'], y=bbands(self.data['index'])[1], name='Upper'))
-        fig.add_trace(go.Scatter(x=self.data['Year'], y=bbands(self.data['index'])[2], name='Lower'))
-        
-        fig.add_trace(go.Scatter(x=self.data[self.data['index'] > bbands(self.data['index'])[1]]['Year'], 
-                                 y=self.data[self.data['index'] > bbands(self.data['index'])[1]]['index'], 
-                                 mode='markers', 
-                                 marker=dict(color='Yellow',size=8,line=dict(color='DarkSlateGrey',width=2)),# marker
-                                 name='Above 1 std'))
-        
-        fig.add_trace(go.Scatter(x=self.data[self.data['index'] > bbands(self.data['index'],no_of_std=2)[1]]['Year'],
-                                 y=self.data[self.data['index'] > bbands(self.data['index'],no_of_std=2)[1]]['index'],
-                                 mode='markers',
-                                 marker=dict(color='Orange',size=8, line=dict(color='DarkSlateGrey', width=2)),# marker
-                                 name='Above 2 std'))
-        
-        fig.add_trace(go.Scatter(x=self.data[self.data['index'] > bbands(self.data['index'],no_of_std=3)[1]]['Year'],
-                                 y=self.data[self.data['index'] > bbands(self.data['index'],no_of_std=3)[1]]['index'],
-                                 mode='markers',
-                                 marker=dict(color='Red',size=8,line=dict(color='DarkSlateGrey',width=2)), # marker
-                                 name='Above 3 std'))
-        
-        # fig.update_layout(title=f'Bollinger Bands for HTS {self.HTS_code}', xaxis_title='Year', yaxis_title='Value')
-        return fig.show()
+        fig.add_trace(go.Scatter(x=self.path['Year'], y=self.path['index'], name=f'{self.title} Index', mode='lines'))
+        # make an anotation for Huricane Maria
+        fig.add_annotation(x=2017, y=self.path.loc[self.path['Year'] == 2017].iat[0, 1], text=f'Huracan Maria', showarrow=True,
+                           font=dict(family="Courier New, monospace",
+                                     size=16,
+                                     color="#ffffff"),
+                           align="center", arrowhead=2, arrowsize=1, arrowwidth=2, arrowcolor="#636363", ax=20, ay=-30, 
+                           bordercolor="#c7c7c7", borderwidth=2, borderpad=4, bgcolor="#ff7f0e", opacity=0.8)
+        # make an anotation for Pandemic
+        fig.add_annotation(x=2020, y=self.path.loc[self.path['Year'] == 2020].iat[0, 1], text=f'La Pandemia', showarrow=True,
+                           font=dict(family="Courier New, monospace",
+                                     size=16,
+                                     color="#ffffff"),
+                           align="center", arrowhead=2, arrowsize=1, arrowwidth=2, arrowcolor="#636363", ax=-20, ay=30, 
+                           bordercolor="#c7c7c7", borderwidth=2, borderpad=4, bgcolor="#ff7f0e", opacity=0.8)
+        fig.update_layout(title=self.title)
+        fig.update_xaxes(title_text='Year')
+        fig.update_yaxes(title_text=f'{self.title} Index')
+        fig.update_layout(height=800, width=1200)
+        fig.show()
 
-        if __name__ == "__main__":
-            data = 'Data/edu_pr_health.csv'
-            gra = Graphs(data)
-            
+if __name__ == '__main__':
+    path = 'Data/edu_index.csv'
+    title = 'Health'
+    g = Graphs(path, title)
+    g.plot_graph()

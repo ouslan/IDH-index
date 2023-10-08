@@ -73,10 +73,9 @@ class IndexIDH:
             # get Life expectancy at birth, total (years) for Puerto Rico
             pr_health = pd.DataFrame(wb.get_series('SP.DYN.LE00.IN', country='PR', simplify_index=True))
             pr_health.reset_index(inplace=True)
-            pr_health.rename(columns={'SP.DYN.LE00.IN': 'health_index'}, inplace=True)
-            pr_health['health'] = pr_health['health_index'].astype(float)
-            pr_health['health_index'] = pr_health['health_index'].apply(lambda x: (x-20)/(85-20))
-            pr_health['health_index'] = pr_health['health_index'].astype(float)
+            pr_health.rename(columns={'SP.DYN.LE00.IN': 'index'}, inplace=True)
+            pr_health['index'] = pr_health['index'].apply(lambda x: (x-20)/(85-20))
+            pr_health['index'] = pr_health['index'].astype(float)
             pr_health['Year'] = pr_health['Year'].astype(int)
             # save in csv
             pr_health.to_csv('Data/health_index.csv', index=False)
@@ -168,7 +167,12 @@ class IndexIDH:
             return edu_index  
     
     def idh_index(self):
-        return self.data['IDH'].mean()
+        # check if idh index is already calculated
+        if os.path.exists('Data/health_index.csv'):
+            rt_health = pd.read_csv('Data/health_index.csv')
+            rt_health = rt_health.loc[rt_health['Year'] == year].iat[0, 1]
+            return rt_health
+        else:
 
 if __name__ == "__main__":
     # # generate csv file for 2009-2020 for the education index
