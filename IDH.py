@@ -166,12 +166,15 @@ class IndexIDH:
             edu_index = (value1/15 + value2/18) / 2
             return edu_index  
     
-    def idh_index(self):
+    def idh_index(self, year=2019, debug=False):
         # check if idh index is already calculated
-        if os.path.exists('Data/health_index.csv'):
-            rt_health = pd.read_csv('Data/health_index.csv')
-            rt_health = rt_health.loc[rt_health['Year'] == year].iat[0, 1]
-            return rt_health
+        if os.path.exists('Data/idh_index.csv'):
+            idh_df = pd.read_csv('Data/idh_index.csv')
+            idh_df = idh_df.loc[idh_df['Year'] == year].iat[0, 1]
+            if debug:
+                return pd.read_csv('Data/idh_index.csv')
+            else:
+                return idh_df
         else:
             health = pd.read_csv('Data/health_index.csv')
             health.rename(columns={'index': 'health_index'}, inplace=True)
@@ -184,7 +187,12 @@ class IndexIDH:
             df = df.merge(edu, on='Year', how='left')
             # calculate the index
             df['index'] = (df['health_index'] * df['income_index'] * df['edu_index']) ** (1/3)
-            return df
+            df.to_csv('Data/idh_index.csv', index=False)
+            if debug:
+                return df
+            else:
+                return df.loc[df['Year'] == year].iat[0, 1]
+            
 
 if __name__ == "__main__":
     # # generate csv file for 2009-2020 for the education index
