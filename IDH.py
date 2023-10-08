@@ -173,6 +173,18 @@ class IndexIDH:
             rt_health = rt_health.loc[rt_health['Year'] == year].iat[0, 1]
             return rt_health
         else:
+            health = pd.read_csv('Data/health_index.csv')
+            health.rename(columns={'index': 'health_index'}, inplace=True)
+            income = pd.read_csv('Data/income_index.csv')
+            income.rename(columns={'index': 'income_index'}, inplace=True)
+            edu = pd.read_csv('Data/edu_index.csv')
+            edu.rename(columns={'index': 'edu_index'}, inplace=True)
+            # merge the three dataframes
+            df = health.merge(income, on='Year', how='left')
+            df = df.merge(edu, on='Year', how='left')
+            # calculate the index
+            df['index'] = (df['health_index'] * df['income_index'] * df['edu_index']) ** (1/3)
+            return df
 
 if __name__ == "__main__":
     # # generate csv file for 2009-2020 for the education index
