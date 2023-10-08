@@ -10,7 +10,6 @@ import os
 
 class IndexIDH:
 
-
     def get_data(self, range_years):
         print((colored('Education Data', 'blue')).center(50))
         print('|------------------------------------|')
@@ -52,8 +51,10 @@ class IndexIDH:
                 edu_index.append(IndexIDH().edu_index(year))
 
             # generate a dataframe for the education index
-            edu_index = pd.DataFrame(edu_index, columns=['edu_index'])
+            edu_index = pd.DataFrame(edu_index, columns=['index'])
             edu_index['Year'] = range(2009, 2022)
+            edu_index = edu_index[['Year', 'index']]
+            edu_index['edu_index'] = edu_index['index'].astype(float)
             edu_index.to_csv('Data/edu_index.csv', index=False)
 
             # remove the raw data
@@ -64,8 +65,8 @@ class IndexIDH:
                     continue
 
     def health_index(self, year):
-        if os.path.exists('Data/pr_health.csv'):
-            rt_health = pd.read_csv('Data/pr_health.csv')
+        if os.path.exists('Data/health_index.csv'):
+            rt_health = pd.read_csv('Data/health_index.csv')
             rt_health = rt_health.loc[rt_health['Year'] == year].iat[0, 1]
             return rt_health
         else:
@@ -78,13 +79,13 @@ class IndexIDH:
             pr_health['health_index'] = pr_health['health_index'].astype(float)
             pr_health['Year'] = pr_health['Year'].astype(int)
             # save in csv
-            pr_health.to_csv('Data/pr_health.csv', index=False)
+            pr_health.to_csv('Data/health_index.csv', index=False)
             # return health index for year 
             rt_health = pr_health.loc[pr_health['Year'] == year].iat[0, 1]
             # return only the health index for the year
             return rt_health
 
-    def income_index(self):
+    def income_index(self, year):
         if os.path.exists('Data/income_index.csv'):
             inc_df = pd.read_csv('Data/income_index.csv')
             inc_df = inc_df.loc[inc_df['Year'] == 2019].iat[0, 1]
@@ -121,7 +122,8 @@ class IndexIDH:
             merge_df = merge_df[['Year', 'index']]
             # save the data
             merge_df.to_csv('Data/income_index.csv', index=False)
-            return merge_df
+            # return the index value for that year
+            return merge_df.loc[merge_df['Year'] == year, 'index'].values[0]
     
     def edu_index(self, year):
         # check if edu index is already calculated
