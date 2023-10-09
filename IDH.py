@@ -187,6 +187,8 @@ class IndexIDH:
             df = df.merge(edu, on='Year', how='left')
             # calculate the index
             df['index'] = (df['health_index'] * df['income_index'] * df['edu_index']) ** (1/3)
+            df.drop(['health_index', 'income_index', 'edu_index'], axis=1, inplace=True)
+            df.dropna(inplace=True)
             df.to_csv('Data/idh_index.csv', index=False)
             if debug:
                 return df

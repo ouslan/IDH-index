@@ -10,7 +10,7 @@ class Graphs:
 
     def plot_graph(self):
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=self.path['Year'], y=self.path['index'], name=f'{self.title} Index', mode='lines'))
+        fig.add_trace(go.Scatter(x=self.path['Year'], y=self.path['index'], name=f'{self.title} Index', mode='lines+markers'))
         # make an anotation for Huricane Maria
         fig.add_annotation(x=2017, y=self.path.loc[self.path['Year'] == 2017].iat[0, 1], text=f'Huracan Maria', showarrow=True,
                            font=dict(family="Courier New, monospace",
