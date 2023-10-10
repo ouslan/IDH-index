@@ -10,7 +10,6 @@ import os
 
 class IndexIDH:
 
-
     def get_data(self, range_years):
         print((colored('Education Data', 'blue')).center(50))
         print('|------------------------------------|')
@@ -52,8 +51,10 @@ class IndexIDH:
                 edu_index.append(IndexIDH().edu_index(year))
 
             # generate a dataframe for the education index
-            edu_index = pd.DataFrame(edu_index, columns=['edu_index'])
+            edu_index = pd.DataFrame(edu_index, columns=['index'])
             edu_index['Year'] = range(2009, 2022)
+            edu_index = edu_index[['Year', 'index']]
+            edu_index['edu_index'] = edu_index['index'].astype(float)
             edu_index.to_csv('Data/edu_index.csv', index=False)
 
             # remove the raw data
@@ -64,27 +65,26 @@ class IndexIDH:
                     continue
 
     def health_index(self, year):
-        if os.path.exists('Data/pr_health.csv'):
-            rt_health = pd.read_csv('Data/pr_health.csv')
+        if os.path.exists('Data/health_index.csv'):
+            rt_health = pd.read_csv('Data/health_index.csv')
             rt_health = rt_health.loc[rt_health['Year'] == year].iat[0, 1]
             return rt_health
         else:
             # get Life expectancy at birth, total (years) for Puerto Rico
             pr_health = pd.DataFrame(wb.get_series('SP.DYN.LE00.IN', country='PR', simplify_index=True))
             pr_health.reset_index(inplace=True)
-            pr_health.rename(columns={'SP.DYN.LE00.IN': 'health_index'}, inplace=True)
-            pr_health['health'] = pr_health['health_index'].astype(float)
-            pr_health['health_index'] = pr_health['health_index'].apply(lambda x: (x-20)/(85-20))
-            pr_health['health_index'] = pr_health['health_index'].astype(float)
+            pr_health.rename(columns={'SP.DYN.LE00.IN': 'index'}, inplace=True)
+            pr_health['index'] = pr_health['index'].apply(lambda x: (x-20)/(85-20))
+            pr_health['index'] = pr_health['index'].astype(float)
             pr_health['Year'] = pr_health['Year'].astype(int)
             # save in csv
-            pr_health.to_csv('Data/pr_health.csv', index=False)
+            pr_health.to_csv('Data/health_index.csv', index=False)
             # return health index for year 
             rt_health = pr_health.loc[pr_health['Year'] == year].iat[0, 1]
             # return only the health index for the year
             return rt_health
 
-    def income_index(self):
+    def income_index(self, year):
         if os.path.exists('Data/income_index.csv'):
             inc_df = pd.read_csv('Data/income_index.csv')
             inc_df = inc_df.loc[inc_df['Year'] == 2019].iat[0, 1]
@@ -121,7 +121,8 @@ class IndexIDH:
             merge_df = merge_df[['Year', 'index']]
             # save the data
             merge_df.to_csv('Data/income_index.csv', index=False)
-            return merge_df
+            # return the index value for that year
+            return merge_df.loc[merge_df['Year'] == year, 'index'].values[0]
     
     def edu_index(self, year):
         # check if edu index is already calculated
@@ -165,8 +166,35 @@ class IndexIDH:
             edu_index = (value1/15 + value2/18) / 2
             return edu_index  
     
-    def idh_index(self):
-        return self.data['IDH'].mean()
+    def idh_index(self, year=2019, debug=False):
+        # check if idh index is already calculated
+        if os.path.exists('Data/idh_index.csv'):
+            idh_df = pd.read_csv('Data/idh_index.csv')
+            idh_df = idh_df.loc[idh_df['Year'] == year].iat[0, 1]
+            if debug:
+                return pd.read_csv('Data/idh_index.csv')
+            else:
+                return idh_df
+        else:
+            health = pd.read_csv('Data/health_index.csv')
+            health.rename(columns={'index': 'health_index'}, inplace=True)
+            income = pd.read_csv('Data/income_index.csv')
+            income.rename(columns={'index': 'income_index'}, inplace=True)
+            edu = pd.read_csv('Data/edu_index.csv')
+            edu.rename(columns={'index': 'edu_index'}, inplace=True)
+            # merge the three dataframes
+            df = health.merge(income, on='Year', how='left')
+            df = df.merge(edu, on='Year', how='left')
+            # calculate the index
+            df['index'] = (df['health_index'] * df['income_index'] * df['edu_index']) ** (1/3)
+            df.drop(['health_index', 'income_index', 'edu_index'], axis=1, inplace=True)
+            df.dropna(inplace=True)
+            df.to_csv('Data/idh_index.csv', index=False)
+            if debug:
+                return df
+            else:
+                return df.loc[df['Year'] == year].iat[0, 1]
+            
 
 if __name__ == "__main__":
     # # generate csv file for 2009-2020 for the education index
