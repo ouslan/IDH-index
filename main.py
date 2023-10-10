@@ -46,6 +46,14 @@ while True:
         sleep(2)
         os.system('clear')
         print(f"The income index is {idh.income_index(year)}")
+        year = int(input("Enter a year: "))
+        os.system('clear')
+        print("Calculating the education index")
+        sleep(2)
+        if idh.income_index(year) is np.nan:
+            print(colored(f"ERROR: The year {year} is outside the 2009-2021 range. Please try again",'red'))
+        else:
+            print(colored(f"The education index is {idh.income_index(year)}", 'blue'))
         sleep(2)
     # Education index
     elif option == 5:
