@@ -46,14 +46,32 @@ class IndexIDH:
             return ''
         else:
             edu_index = []
+            schooling_mean = []
+            enrollment_mean = []
             print(colored('Merging data and optimizing', 'green'))
-            for year in range(2009, 2022):
+            for year in range(2012, 2022):
                 print(colored(f'Processing {year} data', 'yellow'))
-                edu_index.append(IndexIDH().edu_index(year))
+                temp1, temp2, temp3 = IndexIDH().edu_index(year)
+                edu_index.append(temp1)
+                schooling_mean.append(temp2)
+                enrollment_mean.append(temp3)
 
             # generate a dataframe for the education index
-            edu_index = pd.DataFrame(edu_index, columns=['edu_index'])
-            edu_index['Year'] = range(2009, 2022)
+            edu_index = pd.DataFrame(edu_index, columns=['index'])
+            schooling_mean = pd.DataFrame(schooling_mean, columns=['schooling_mean'])
+            enrollment_mean = pd.DataFrame(enrollment_mean, columns=['enrollment_mean'])
+
+            edu_index['Year'] = range(2012, 2022)
+            schooling_mean['Year'] = range(2012, 2022)
+            enrollment_mean['Year'] = range(2012, 2022)
+            
+            edu_index = edu_index.set_index('Year')
+            schooling_mean = schooling_mean.set_index('Year')
+            enrollment_mean = enrollment_mean.set_index('Year')
+            
+            edu_index = edu_index.merge(schooling_mean, on='Year', how='left')
+            edu_index = edu_index.merge(enrollment_mean, on='Year', how='left')
+            edu_index['Year'] = range(2012, 2022)
             edu_index.to_csv('Data/edu_index.csv', index=False)
 
             # remove the raw data
@@ -84,10 +102,10 @@ class IndexIDH:
             # return only the health index for the year
             return rt_health
 
-    def income_index(self):
+    def income_index(self, year):
         if os.path.exists('Data/income_index.csv'):
             inc_df = pd.read_csv('Data/income_index.csv')
-            inc_df = inc_df.loc[inc_df['Year'] == 2019].iat[0, 1]
+            inc_df = inc_df.loc[inc_df['Year'] == year].iat[0, 1]
             return inc_df
         else:
             # get atlas df from WB
@@ -163,7 +181,7 @@ class IndexIDH:
 
             # calculate index
             edu_index = (value1/15 + value2/18) / 2
-            return edu_index  
+            return edu_index, value1, value2
     
     def idh_index(self):
         return self.data['IDH'].mean()
