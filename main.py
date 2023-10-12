@@ -17,7 +17,7 @@ while True:
     option = int(input("Choose an option: "))
     if option == 1:
         idh = IndexIDH()
-        idh.get_data(['2009','2021'])
+        idh.get_data(['2012','2021'])
         print("Data downloaded")
         os.system('clear')
         sleep(2)
@@ -40,6 +40,12 @@ while True:
         os.system('clear')
     elif option == 4:
         idh = IndexIDH()
+        os.system('clear')
+        year = int(input("Enter a year: "))
+        print("Calculating the income index")
+        sleep(2)
+        os.system('clear')
+        print(f"The income index is {idh.income_index(year)}")
         year = int(input("Enter a year: "))
         os.system('clear')
         print("Calculating the education index")
