@@ -32,7 +32,7 @@ class Graphs:
         fig.show()
 
 if __name__ == '__main__':
-    path = 'Data/edu_index.csv'
+    path = 'Data/idh_index.csv'
     title = 'Health'
     g = Graphs(path, title)
     g.plot_graph()
