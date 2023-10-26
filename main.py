@@ -5,7 +5,7 @@ from tqdm import tqdm
 from termcolor import colored
 import os
 
-# While loop to choose uption
+# While loop to choose option
 while True:
     print("1. Download the data")
     print("2. Show the data")
@@ -26,6 +26,7 @@ while True:
         idh.show_data()
         sleep(2)
         os.system('clear')
+    # health index
     elif option == 3:
         idh = IndexIDH()
         year = int(input("Enter a year: "))
@@ -35,17 +36,13 @@ while True:
         if idh.health_index(year) is np.nan:
             print(colored(f"ERROR: The year {year} is outside the range. Please try again",'red'))
         else:
-            print(colored(f"The health index is {idh.health_index(year)}", 'blue'))
+            print(colored(f"The health index is {np.round(idh.health_index(year), decimals=2)}", 'blue'))
         sleep(5)
         os.system('clear')
+    # income index
     elif option == 4:
         idh = IndexIDH()
         os.system('clear')
-        year = int(input("Enter a year: "))
-        print("Calculating the income index")
-        sleep(2)
-        os.system('clear')
-        print(f"The income index is {idh.income_index(year)}")
         year = int(input("Enter a year: "))
         os.system('clear')
         print("Calculating the education index")
@@ -53,11 +50,13 @@ while True:
         if idh.income_index(year) is np.nan:
             print(colored(f"ERROR: The year {year} is outside the 2009-2021 range. Please try again",'red'))
         else:
-            print(colored(f"The education index is {idh.income_index(year)}", 'blue'))
+            print(colored(f"The education index is {np.round(idh.income_index(year),decimals=2)}", 'blue'))
         sleep(2)
+        os.system('clear')
     # Education index
     elif option == 5:
         idh = IndexIDH()
+        os.system('clear')
         year = int(input("Enter a year: "))
         os.system('clear')
         print("Calculating the education index")
@@ -65,14 +64,19 @@ while True:
         if idh.edu_index(year) is np.nan:
             print(colored(f"ERROR: The year {year} is outside the 2009-2021 range. Please try again",'red'))
         else:
-            print(colored(f"The education index is {idh.edu_index(year)}", 'blue'))
+            print(colored(f"The education index is {np.round(idh.edu_index(year), decimals=2)}", 'blue'))
         sleep(2)
+        os.system('clear')
+    # IDH index
     elif option == 6:
         idh = IndexIDH()
+        os.system('clear')
+        year = int(input("Enter a year: "))
         print("Calculating the IDH index")
         sleep(2)
-        print(f"The IDH index is {idh.idh_index()}")
+        print(colored(f"The IDH index is {np.round(idh.idh_index(year), decimals=2)}", 'blue'))
         sleep(2)
+        os.system('clear')
     elif option == 7:
         print("Good bye")
         break

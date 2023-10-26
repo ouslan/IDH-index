@@ -146,7 +146,7 @@ class IndexIDH:
             data = pd.read_csv('Data/edu_index.csv')
             # return the index value for that year
             try:
-                return data[data['Year'] == year]['edu_index'].values[0]
+                return data[data['Year'] == year]['index'].values[0]
             except (IndexError):
                 return np.nan
         else:
