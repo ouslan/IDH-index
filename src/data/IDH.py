@@ -19,7 +19,7 @@ class IndexIDH:
                 continue
             else:
                 url = f'https://www2.census.gov/programs-surveys/acs/data/pums/{year}/5-Year/csv_ppr.zip'
-                file_name = f'Data/raw_{year}.zip'
+                file_name = f'data/raw/raw_{year}.zip'
 
             # progress bar
                 print(colored(f'Downloading {year} data', 'yellow'))
@@ -41,7 +41,7 @@ class IndexIDH:
                     else:
                         continue
         # merge all the data
-        if os.path.exists('Data/edu_index.csv'):
+        if os.path.exists('data/processed/edu_index.csv'):
             return ''
         else:
             edu_index = []
@@ -74,15 +74,15 @@ class IndexIDH:
             edu_index.to_csv('Data/edu_index.csv', index=False)
 
             # remove the raw data
-            for file in os.listdir('Data'):
+            for file in os.listdir('data/raw/'):
                 if file.endswith('_raw.csv'):
-                    os.remove(f'Data/{file}')
+                    os.remove(f'data/raw/{file}')
                 else:
                     continue
 
     def health_index(self, year):
-        if os.path.exists('Data/health_index.csv'):
-            rt_health = pd.read_csv('Data/health_index.csv')
+        if os.path.exists('data/processed/health_index.csv'):
+            rt_health = pd.read_csv('data/processed/health_index.csv')
             rt_health = rt_health.loc[rt_health['Year'] == year].iat[0, 1]
             return rt_health
         else:
@@ -94,7 +94,7 @@ class IndexIDH:
             pr_health['index'] = pr_health['index'].astype(float)
             pr_health['Year'] = pr_health['Year'].astype(int)
             # save in csv
-            pr_health.to_csv('Data/health_index.csv', index=False)
+            pr_health.to_csv('data/processed/health_index.csv', index=False)
             # return health index for year 
             rt_health = pr_health.loc[pr_health['Year'] == year].iat[0, 1]
             # return only the health index for the year
@@ -142,8 +142,8 @@ class IndexIDH:
     
     def edu_index(self, year):
         # check if edu index is already calculated
-        if os.path.exists('Data/edu_index.csv'):
-            data = pd.read_csv('Data/edu_index.csv')
+        if os.path.exists('data/processed/edu_index.csv'):
+            data = pd.read_csv('data/processed/edu_index.csv')
             # return the index value for that year
             try:
                 return data[data['Year'] == year]['index'].values[0]
@@ -151,7 +151,7 @@ class IndexIDH:
                 return np.nan
         else:
             try: 
-                data = f'Data/data_{year}_raw.csv'
+                data = f'data/processed/data_{year}_raw.csv'
                 self.df = pd.read_csv(data, low_memory=False)
             except(FileNotFoundError):
                 print('No data for that year, please run get_data()')

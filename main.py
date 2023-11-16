@@ -1,4 +1,4 @@
-from IDH import IndexIDH
+from src.data.IDH import IndexIDH
 import numpy as np
 from time import sleep
 from tqdm import tqdm
