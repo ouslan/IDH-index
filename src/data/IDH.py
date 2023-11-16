@@ -40,6 +40,7 @@ class IndexIDH:
                         os.rename(f'Data/{file}', f'Data/data_{year}_raw.csv')
                     else:
                         continue
+        
         # merge all the data
         if os.path.exists('data/processed/edu_index.csv'):
             return ''
