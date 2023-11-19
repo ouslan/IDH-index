@@ -1,11 +1,6 @@
 import pandas as pd
 import numpy as np
 import world_bank_data as wb
-from urllib.request import urlretrieve
-from termcolor import colored
-from tqdm import tqdm
-from termcolor import colored
-import zipfile
 import os
 
 class IndexIDH:
