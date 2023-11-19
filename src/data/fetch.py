@@ -36,9 +36,14 @@ def get_data(range_years):
                         os.rename(f'data/raw/{file}', f'data/raw/data_{year}_raw.csv')
                     else:
                         continue
-            IDH = IndexIDH()
-            IDH.edu_index('data/raw/')
-        
+        IDH = IndexIDH()
+        IDH.edu_index('data/raw/')
+        # # remove the raw data
+        # for file in os.listdir('data/raw/'):
+        #     if file.endswith('_raw.csv'):
+        #         os.remove(f'data/raw/{file}')
+        #     else:
+        #         continue
 
 if __name__ == '__main__':
     get_data(['2012','2021'])

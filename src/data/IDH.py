@@ -57,7 +57,7 @@ class IndexIDH:
             if not file.endswith('.csv'):
                 continue
             else:
-                self.df = pd.read_csv(os.path.join(folder_path, file))
+                self.df = pd.read_csv(folder_path + file, low_memory=False)
                 self.df = self.df[['AGEP', 'SCH', 'SCHL']]
                 # calcualte the mean of years of schooling
                 self.df2 = self.df[self.df['AGEP'] > 25].copy()
@@ -83,15 +83,17 @@ class IndexIDH:
                 # calculate index
                 edu_value = (value1/15 + value2/18) / 2
                 year = file.split('_')[1]
-                edu_index = edu_index.append({'Year': year, 'edu_index': edu_value}, ignore_index=True)
+                edu_index = pd.concat([edu_index, pd.DataFrame([[year, edu_value]], columns=['Year', 'edu_index'])])
+                edu_index = edu_index.sort_values(by='Year', ascending=True)
+                print(year, edu_value)
 
-        edu_index.to_csv('Data/edu_index.csv', index=False)
+        edu_index.to_csv('data/processed/edu_index.csv', index=False)
 
     
     def idh_index(self, year=2019, debug=False):
         # check if idh index is already calculated
-        if os.path.exists('Data/idh_index.csv'):
-            idh_df = pd.read_csv('Data/idh_index.csv')
+        if os.path.exists('data/idh_index.csv'):
+            idh_df = pd.read_csv('data/idh_index.csv')
             idh_df = idh_df.loc[idh_df['Year'] == year].iat[0, 1]
             if debug:
                 return pd.read_csv('Data/idh_index.csv')
@@ -111,7 +113,7 @@ class IndexIDH:
             df['index'] = (df['health_index'] * df['income_index'] * df['edu_index']) ** (1/3)
             df.drop(['enrollment_mean', 'schooling_mean'], axis=1, inplace=True)
             df.dropna(inplace=True)
-            df.to_csv('Data/idh_index.csv', index=False)
+            df.to_csv('ddata/processed/idh_index.csv', index=False)
             if debug:
                 return df
             else:
