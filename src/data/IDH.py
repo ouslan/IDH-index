@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from scipy.stats import gmean
 import world_bank_data as wb
 import os
 
@@ -54,7 +55,7 @@ class IndexIDH:
                 continue
             else:
                 df = pd.read_csv(folder_path + file, low_memory=False)
-                df = df[['AGEP', 'SCH', 'SCHL']]
+                df = df[['AGEP', 'SCH', 'SCHL','PINCP']]
                 
                 # calcualte the mean of years of schooling
                 edu_sch = df[df['AGEP'] > 25].copy()
@@ -101,6 +102,8 @@ class IndexIDH:
         df.dropna(inplace=True)
         df.to_csv('data/processed/idh_index.csv', index=False)
 
+    def adjust(self, df):
+        
 if __name__ == "__main__":
     # # generate csv file for 2009-2020 for the education index
     idh = IndexIDH()
