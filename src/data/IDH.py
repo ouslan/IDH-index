@@ -14,6 +14,7 @@ class IndexIDH:
         pr_health['index'] = pr_health['index'].apply(lambda x: (x-20)/(85-20))
         pr_health['index'] = pr_health['index'].astype(float)
         pr_health['Year'] = pr_health['Year'].astype(int)
+        pr_health['health_index_ajusted'] = pr_health['index'] * (1-0.08)
         
         if debug:
             return pr_health
@@ -102,7 +103,7 @@ class IndexIDH:
                 df_income = df_income[df_income > 1]
                 df_income = df_income.dropna()
                 bottom_5 = df_income[df_income <= df_income.quantile(0.005)]
-                max_income = df_income_bottom_5.max()
+                max_income = bottom_5.max()
 
         if debug:
             return edu_index    
