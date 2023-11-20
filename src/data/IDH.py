@@ -94,6 +94,16 @@ class IndexIDH:
                 year = file.split('_')[1]
                 edu_index = pd.concat([edu_index, pd.DataFrame([[year, edu_value, edu_value_ajusted]], columns=['Year', 'edu_index', 'edu_index_ajusted'])])
                 edu_index = edu_index.sort_values(by='Year', ascending=True)
+
+                # calculate the ajusted coeficient for income index
+                #TODO: needs to be implemented the removal of max
+                df_income = df['PINCP']
+                df_income = df_income.sort_values(ascending=True)
+                df_income = df_income[df_income > 1]
+                df_income = df_income.dropna()
+                bottom_5 = df_income[df_income <= df_income.quantile(0.005)]
+                max_income = df_income_bottom_5.max()
+
         if debug:
             return edu_index    
         else:
