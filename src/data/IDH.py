@@ -14,8 +14,11 @@ class IndexIDH:
         pr_health['index'] = pr_health['index'].apply(lambda x: (x-20)/(85-20))
         pr_health['index'] = pr_health['index'].astype(float)
         pr_health['Year'] = pr_health['Year'].astype(int)
-        # save in csv
-        pr_health.to_csv('data/processed/health_index.csv', index=False)
+        
+        if debug:
+            return pr_health
+        else:
+            pr_health.to_csv('data/processed/health_index.csv', index=False)
 
     def income_index(self, debug=False):
         # get atlas df from WB
@@ -45,7 +48,10 @@ class IndexIDH:
         merge_df['index_temp'] = merge_df['income_ratio'] * merge_df['pnb']
         merge_df['index'] = (np.log(merge_df['index_temp']) - np.log(100)) / (np.log(70000)-np.log(100))
         merge_df = merge_df[['Year', 'index']]
-        merge_df.to_csv('data/processed/income_index.csv', index=False)
+        if debug:
+            return merge_df
+        else:
+            merge_df.to_csv('data/processed/income_index.csv', index=False)
     
     def edu_index(self, folder_path='data/raw/', debug=False):
 
@@ -88,7 +94,10 @@ class IndexIDH:
                 year = file.split('_')[1]
                 edu_index = pd.concat([edu_index, pd.DataFrame([[year, edu_value, edu_value_ajusted]], columns=['Year', 'edu_index', 'edu_index_ajusted'])])
                 edu_index = edu_index.sort_values(by='Year', ascending=True)
-        edu_index.to_csv('data/processed/edu_index.csv', index=False)
+        if debug:
+            return edu_index    
+        else:
+            edu_index.to_csv('data/processed/edu_index.csv', index=False)
  
     def idh_index(self, debug=False):
 
@@ -105,7 +114,10 @@ class IndexIDH:
         df = df.merge(edu, on='Year', how='left')
         df['index'] = (df['health_index'] * df['income_index'] * df['edu_index']) ** (1/3)
         df.dropna(inplace=True)
-        df.to_csv('data/processed/idh_index.csv', index=False)
+        if debug:
+            return df
+        else:
+            df.to_csv('data/processed/idh_index.csv', index=False)
 
     def adjust(self, df):
             gemetric = gmean(df)
