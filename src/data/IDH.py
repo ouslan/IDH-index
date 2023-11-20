@@ -49,7 +49,7 @@ class IndexIDH:
     
     def edu_index(self, folder_path='data/raw/', debug=False):
 
-        edu_index = pd.DataFrame(columns=['Year', 'edu_index'])
+        edu_index = pd.DataFrame(columns=['Year', 'edu_index', 'edu_index_ajusted'])
         for file in os.listdir(folder_path):
             if not file.endswith('.csv'):
                 continue
@@ -59,13 +59,17 @@ class IndexIDH:
                 
                 # calcualte the mean of years of schooling
                 edu_sch = df[df['AGEP'] > 25].copy()
-                edu_sch['scholing'] =  df2['SCHL']
+                edu_sch['scholing'] =  edu_sch['SCHL']
                 edu_sch.reset_index(inplace=True)
                 edu_sch['scholing'].replace({3:1, 4:2, 5:3, 6:4, 7:5, 8:6, 9:7, 10:8, 11:9, 
                                         12:10, 13:11, 14:12, 15:13, 15:13, 16:13, 17:13, 
                                         18:13.5, 19:14, 20:15, 21:17, 22:19, 23:19, 24:23}, inplace=True)
                 edu_sch['enroled'] = np.where(edu_sch['scholing'] > 1, 1, 0)
                 mean_sch = edu_sch['scholing'].mean()
+
+                # get coeficient of ajustment
+                edu_sch['no_zero_schooling'] = 1 + edu_sch['scholing']
+                coef, amean, gemetric = self.adjust(edu_sch['no_zero_schooling'])
 
                 # calculate the expected years of schooling
                 edu_exp = df[df['AGEP'] < 25].copy()
@@ -80,8 +84,9 @@ class IndexIDH:
 
                 # calculate index
                 edu_value = (mean_sch/15 + exp_sch/18) / 2
+                edu_value_ajusted = coef * edu_value
                 year = file.split('_')[1]
-                edu_index = pd.concat([edu_index, pd.DataFrame([[year, edu_value]], columns=['Year', 'edu_index'])])
+                edu_index = pd.concat([edu_index, pd.DataFrame([[year, edu_value, edu_value_ajusted]], columns=['Year', 'edu_index', 'edu_index_ajusted'])])
                 edu_index = edu_index.sort_values(by='Year', ascending=True)
         edu_index.to_csv('data/processed/edu_index.csv', index=False)
  
@@ -103,7 +108,12 @@ class IndexIDH:
         df.to_csv('data/processed/idh_index.csv', index=False)
 
     def adjust(self, df):
-        
+            gemetric = gmean(df)
+            amean = np.mean(df)
+            atkinson = 1- gemetric/amean
+            coef = 1 - atkinson
+            return coef, amean, gemetric
+
 if __name__ == "__main__":
     # # generate csv file for 2009-2020 for the education index
     idh = IndexIDH()
