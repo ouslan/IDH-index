@@ -2,7 +2,7 @@ import pandas as pd
 import zipfile
 from tqdm import tqdm
 from termcolor import colored
-from IDH import IndexIDH
+from src.data.IDH import IndexIDH
 from urllib.request import urlretrieve
 import os
 
@@ -36,8 +36,9 @@ def get_data(range_years):
                         os.rename(f'data/raw/{file}', f'data/raw/data_{year}_raw.csv')
                     else:
                         continue
-        
+        print('|------------------------------------|')
         # calclulate all indexes
+        print((colored('Calculating all indexes \n \nPlease wait this may take a while!', 'blue')).center(50))
         IDH = IndexIDH()
         IDH.edu_index('data/raw/')
         IDH.income_index()
