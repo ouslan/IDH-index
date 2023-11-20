@@ -1,4 +1,5 @@
 from src.data.IDH import IndexIDH
+from src.data.fetch import get_data
 import numpy as np
 from time import sleep
 from tqdm import tqdm
@@ -17,7 +18,7 @@ while True:
     option = int(input("Choose an option: "))
     if option == 1:
         idh = IndexIDH()
-        idh.get_data(['2012','2021'])
+        get_data(['2012','2021'])
         print("Data downloaded")
         os.system('clear')
         sleep(2)
