@@ -3,3 +3,4 @@ pandas
 numpy
 world_bank_data
 termcolor
+scipy

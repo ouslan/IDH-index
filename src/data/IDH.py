@@ -98,11 +98,13 @@ class IndexIDH:
 
                 # calculate the ajusted coeficient for income index
                 #TODO: needs to be implemented the removal of max
-                df_income = df['PINCP']
+                df_income = df['PINCP'] # use HINCS
                 df_income = df_income.sort_values(ascending=True)
-                df_income = df_income[df_income > 1]
+                df_income = df_income[df_income > 0]
                 df_income = df_income.dropna()
                 bottom_5 = df_income[df_income <= df_income.quantile(0.005)]
+                # remove top 0.5%
+                
                 max_income = bottom_5.max()
 
         if debug:
