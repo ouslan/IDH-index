@@ -3,6 +3,7 @@ import numpy as np
 from scipy.stats import gmean
 import world_bank_data as wb
 import os
+from rich.console import Console
 
 class IndexIDH:
 
@@ -14,6 +15,8 @@ class IndexIDH:
         pr_health['index'] = pr_health['index'].apply(lambda x: (x-20)/(85-20))
         pr_health['index'] = pr_health['index'].astype(float)
         pr_health['Year'] = pr_health['Year'].astype(int)
+       
+       # create the adjusted index
         pr_health['health_index_ajusted'] = pr_health['index'] * (1-0.08)
         
         if debug:
@@ -49,6 +52,7 @@ class IndexIDH:
         merge_df['index_temp'] = merge_df['income_ratio'] * merge_df['pnb']
         merge_df['index'] = (np.log(merge_df['index_temp']) - np.log(100)) / (np.log(70000)-np.log(100))
         merge_df = merge_df[['Year', 'index']]
+        
         if debug:
             return merge_df
         else:
@@ -58,9 +62,7 @@ class IndexIDH:
 
         edu_index = pd.DataFrame(columns=['Year', 'edu_index', 'edu_index_ajusted'])
         for file in os.listdir(folder_path):
-            if not file.endswith('.csv'):
-                continue
-            else:
+            if file.startswith('data_ppr'):
                 df = pd.read_csv(folder_path + file, low_memory=False)
                 df = df[['AGEP', 'SCH', 'SCHL','PINCP']]
                 
@@ -104,8 +106,9 @@ class IndexIDH:
                 df_income = df_income.dropna()
                 bottom_5 = df_income[df_income <= df_income.quantile(0.005)]
                 # remove top 0.5%
-                
                 max_income = bottom_5.max()
+            else:
+                continue
 
         if debug:
             return edu_index    
