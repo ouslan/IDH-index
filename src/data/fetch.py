@@ -56,11 +56,11 @@ def calculate(range_years):
     IDH.health_index()
     IDH.idh_index()
     
-    for file in os.listdir('data/raw/'):
-        if file.endswith('raw.csv'):
-            os.remove(f'data/raw/{file}')
-        else:
-            continue
+    # for file in os.listdir('data/raw/'):
+    #     if file.endswith('raw.csv'):
+    #         os.remove(f'data/raw/{file}')
+    #     else:
+    #         continue
 
 if __name__ == '__main__':
     get_data(['2012','2021'])
