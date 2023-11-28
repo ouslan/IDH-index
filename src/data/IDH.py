@@ -94,7 +94,7 @@ class IndexIDH:
                 # calculate index
                 edu_value = (mean_sch/15 + exp_sch/18) / 2
                 edu_value_ajusted = coef * edu_value
-                year = file.split('_')[1]
+                year = file.split('_')[2]
                 edu_index = pd.concat([edu_index, pd.DataFrame([[year, edu_value, edu_value_ajusted]], columns=['Year', 'edu_index', 'edu_index_ajusted'])])
                 edu_index = edu_index.sort_values(by='Year', ascending=True)
 

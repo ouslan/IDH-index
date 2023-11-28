@@ -11,7 +11,7 @@ console = Console()
 def get_data(range_years, data_file):
     console.log("Downloading PPR data from the Census Bureau...", style='bold cyan')
     for year in range(int(range_years[0]), int(range_years[1])+1):
-        if os.path.exists(f'data/raw/data_{year}_raw.csv') or os.path.exists(f'data/processed/edu_index.csv'):
+        if os.path.exists(f'data/raw/data_{data_file[4:7]}_{year}_raw.csv') or os.path.exists(f'data/processed/edu_index.csv'):
             continue
         else:
             url = f'https://www2.census.gov/programs-surveys/acs/data/pums/{year}/5-Year/{data_file}'
@@ -30,7 +30,7 @@ def get_data(range_years, data_file):
 
             # unzip the file
             with zipfile.ZipFile(file_name, 'r') as zip_ref:
-                zip_ref.extractall('data/raw')
+                zip_ref.extractall('data/raw/')
 
             # remove the zip file and pdf
             for file in os.listdir('data/raw/'):
@@ -38,7 +38,7 @@ def get_data(range_years, data_file):
                     os.remove(f'data/raw/{file}')
                 elif file.endswith('.zip'):
                     os.remove(f'data/raw/{file}')
-                elif file.endswith('.csv'):
+                elif file.endswith('.csv') and not file.startswith('data'):
                     os.rename(f'data/raw/{file}', f'data/raw/data_{data_file[4:7]}_{year}_raw.csv')
                 else:
                     continue
@@ -46,7 +46,7 @@ def get_data(range_years, data_file):
 
        
 
-def calculate():
+def calculate(range_years):
     get_data(range_years, data_file='csv_ppr.zip')
     get_data(range_years, data_file='csv_hpr.zip')
     console.log("Calculating all indexes...", style='bold cyan')
