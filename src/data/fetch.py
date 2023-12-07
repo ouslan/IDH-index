@@ -1,13 +1,9 @@
 import pandas as pd
 import zipfile
-from tqdm import tqdm
 from src.data.IDH import IndexIDH
-import requests 
 from urllib.request import urlretrieve
 from yaspin import yaspin
 import os
-from rich import print
-from rich.console import Console
 
 console = Console()
 def get_data(range_years, data_file):
