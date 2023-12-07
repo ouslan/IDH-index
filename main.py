@@ -1,86 +1,50 @@
 from src.data.IDH import IndexIDH
 from src.data.fetch import calculate
-import numpy as np
+import pandas as pd
 from time import sleep
-from tqdm import tqdm
-from termcolor import colored
+import numpy as np
 import os
+from simple_term_menu import TerminalMenu
+from rich.console import Console
+from rich.table import Table
 
-# While loop to choose option
-while True:
-    print("1. Download the data")
-    print("2. Show the data")
-    print("3. Show the health index")
-    print("4. Show the income index")
-    print("5. Show the education index")
-    print("6. Show the IDH index")
-    print("7. Exit")
-    option = int(input("Choose an option: "))
-    if option == 1:
-        idh = IndexIDH()
+def main():
+    options = ["Download IDH data", "Show Health Index", "Show Education Index", "Show Income Index", "Graph", "Exit"]
+    terminal_menu = TerminalMenu(options)
+    menu_entry_index = terminal_menu.show()
+    # downlad the data
+    if menu_entry_index == 0:
         calculate(['2012','2021'])
-        print("Data downloaded")
-        os.system('clear')
-        sleep(2)
-    elif option == 2:
-        idh = IndexIDH()
-        idh.show_data()
-        sleep(2)
-        os.system('clear')
-    # health index
-    elif option == 3:
-        idh = IndexIDH()
-        year = int(input("Enter a year: "))
-        os.system('clear')
-        print("Calculating the health index")
-        sleep(2)
-        if idh.health_index(year) is np.nan:
-            print(colored(f"ERROR: The year {year} is outside the range. Please try again",'red'))
+    # show the health index
+    elif menu_entry_index == 1:
+        if os.path.isfile("data/processed/idh_index.csv"):
+            df = pd.read_csv("data/processed/idh_index.csv")
+            df = df[['Year','health_index','health_index_ajusted']]
+            table = Table(show_header=True, title="Health Index")
+            table.add_column("Year")
+            table.add_column("Health Index")
+            table.add_column("Health Index Ajusted")
+            for i in range(len(df)):
+                table.add_row(np.round(str(df.iloc[i,0])), np.round(str(df.iloc[i,1])), np.round(str(df.iloc[i,2])))
+            console = Console()
+            console.print(table)
         else:
-            print(colored(f"The health index is {np.round(idh.health_index(year), decimals=2)}", 'blue'))
-        sleep(5)
-        os.system('clear')
-    # income index
-    elif option == 4:
-        idh = IndexIDH()
-        os.system('clear')
-        year = int(input("Enter a year: "))
-        os.system('clear')
-        print("Calculating the education index")
-        sleep(2)
-        if idh.income_index(year) is np.nan:
-            print(colored(f"ERROR: The year {year} is outside the 2009-2021 range. Please try again",'red'))
+            print("No data found, please download the data first")
+    elif menu_entry_index == 2:
+        if os.path.isfile("data/processed/idh_index.csv"):
+            df = pd.read_csv("data/processed/idh_index.csv")
+            df = df[['Year','edu_index','edu_index_ajusted']]
+            table = Table(show_header=True, title="Education Index")
+            table.add_column("Year")
+            table.add_column("Education Index")
+            table.add_column("Education Index Ajusted")
+            for i in range(len(df)):
+                table.add_row(str(np.round(df.iloc[i,0], decimals=2)), str(np.round(df.iloc[i,1],decimals=2)), str(np.round(df.iloc[i,2], decimals=2)))
+            console = Console()
+            console.print(table)
         else:
-            print(colored(f"The education index is {np.round(idh.income_index(year),decimals=2)}", 'blue'))
-        sleep(2)
-        os.system('clear')
-    # Education index
-    elif option == 5:
-        idh = IndexIDH()
-        os.system('clear')
-        year = int(input("Enter a year: "))
-        os.system('clear')
-        print("Calculating the education index")
-        sleep(2)
-        if idh.edu_index(year) is np.nan:
-            print(colored(f"ERROR: The year {year} is outside the 2009-2021 range. Please try again",'red'))
-        else:
-            print(colored(f"The education index is {np.round(idh.edu_index(year), decimals=2)}", 'blue'))
-        sleep(2)
-        os.system('clear')
-    # IDH index
-    elif option == 6:
-        idh = IndexIDH()
-        os.system('clear')
-        year = int(input("Enter a year: "))
-        print("Calculating the IDH index")
-        sleep(2)
-        print(colored(f"The IDH index is {np.round(idh.idh_index(year), decimals=2)}", 'blue'))
-        sleep(2)
-        os.system('clear')
-    elif option == 7:
-        print("Good bye")
-        break
-    else:
-        print("Invalid option")
-        sleep(2)
+            print("No data found, please download the data first")
+    
+
+if __name__ == "__main__":
+    main()
