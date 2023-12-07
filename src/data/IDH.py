@@ -156,7 +156,7 @@ class IndexIDH:
     def adjust(self, df):
             gemetric = gmean(df)
             amean = np.mean(df)
-            atkinson = 1- gemetric/amean
+            atkinson = 1 - gemetric/amean
             coef = 1 - atkinson
             return coef, amean, gemetric
 
