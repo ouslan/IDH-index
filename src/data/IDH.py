@@ -38,7 +38,7 @@ class IndexIDH:
         gni_df['gni'] = gni_df['gni'].astype(float)
 
         # ajust the index
-        ajusted_df = pd.DataFrame(columns=['Year', 'coef'])
+        ajusted_df = pd.DataFrame(columns=['Year', 'coef', 'atkinson'])
         for file in os.listdir('data/raw/'):
             if file.startswith('data_hpr'):
                 ajust_df = pd.read_csv('data/raw/' + file, low_memory=False)
@@ -54,8 +54,8 @@ class IndexIDH:
                 ajust_df = ajust_df[ajust_df <= ajust_df.quantile(0.995)]
                 ajust_df = ajust_df.dropna()
                 # get coefficient of ajustment
-                coef, amean, gemetric = self.adjust(ajust_df)
-                ajusted_df = pd.concat([ajusted_df, pd.DataFrame([[int(file.split('_')[2]), coef]], columns=['Year', 'coef'])])
+                coef, amean, gemetric, atkinson = self.adjust(ajust_df)
+                ajusted_df = pd.concat([ajusted_df, pd.DataFrame([[int(file.split('_')[2]), coef, atkinson]], columns=['Year', 'coef', 'atkinson'])])
             else:
                 continue
         # merge the two dataframes
@@ -105,7 +105,7 @@ class IndexIDH:
 
                 # get coeficient of ajustment
                 edu_sch['no_zero_schooling'] = 1 + edu_sch['scholing']
-                coef, amean, gemetric = self.adjust(edu_sch['no_zero_schooling'])
+                coef, amean, gemetric, atkinson = self.adjust(edu_sch['no_zero_schooling'])
 
                 # calculate the expected years of schooling
                 edu_exp = df[df['AGEP'] < 25].copy()
@@ -122,7 +122,7 @@ class IndexIDH:
                 edu_value = (mean_sch/15 + exp_sch/18) / 2
                 edu_value_ajusted = coef * edu_value
                 year = file.split('_')[2]
-                edu_index = pd.concat([edu_index, pd.DataFrame([[year, edu_value, edu_value_ajusted]], columns=['Year', 'edu_index', 'edu_index_ajusted'])])
+                edu_index = pd.concat([edu_index, pd.DataFrame([[year, edu_value, edu_value_ajusted, atkinson]], columns=['Year', 'edu_index', 'edu_index_ajusted', 'atkinson'])])
                 edu_index = edu_index.sort_values(by='Year', ascending=True)
             else:
                 continue
@@ -158,7 +158,7 @@ class IndexIDH:
             amean = np.mean(df)
             atkinson = 1- gemetric/amean
             coef = 1 - atkinson
-            return coef, amean, gemetric
+            return coef, amean, gemetric, atkinson
 
 if __name__ == "__main__":
     # # generate csv file for 2009-2020 for the education index
