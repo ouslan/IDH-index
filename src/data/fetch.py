@@ -37,7 +37,7 @@ def get_data(range_years, data_file):
 
        
 
-def calculate(range_years):
+def download(range_years):
     spin = yaspin(text='Downloading PPR data...', color='blue', spinner='dots')
     spin.start()
     get_data(range_years, data_file='csv_ppr.zip')
