@@ -14,7 +14,7 @@ def main():
     menu_entry_index = terminal_menu.show()
     # downlad the data
     if menu_entry_index == 0:
-        calculate(['2012','2021'])
+        calculate(['2012','2022'])
     # show the health index
     elif menu_entry_index == 1:
         if os.path.isfile("data/processed/idh_index.csv"):

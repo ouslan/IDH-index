@@ -14,7 +14,11 @@ def get_data(range_years, data_file):
             file_name = f'data/raw/raw_ppr_{year}.zip'
 
             # Download progress bar
-            urlretrieve(url, file_name)
+            try:
+                urlretrieve(url, file_name)
+            except:
+                print(f'Error: File for {year} not found')
+                continue
 
             # unzip the file
             with zipfile.ZipFile(file_name, 'r') as zip_ref:
@@ -51,11 +55,11 @@ def calculate(range_years):
     IDH.idh_index()
     spin.stop()
     
-    for file in os.listdir('data/raw/'):
-        if file.endswith('raw.csv'):
-            os.remove(f'data/raw/{file}')
-        else:
-            continue
+    # for file in os.listdir('data/raw/'):
+    #     if file.endswith('raw.csv'):
+    #         os.remove(f'data/raw/{file}')
+    #     else:
+    #         continue
 
 if __name__ == '__main__':
     get_data(['2012','2021'])

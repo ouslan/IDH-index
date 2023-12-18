@@ -137,10 +137,13 @@ class IndexIDH:
         # get & calculate the health index
         health = pd.read_csv('data/processed/health_index.csv')
         health.rename(columns={'index': 'health_index'}, inplace=True)
+        health = health[['Year', 'health_index', 'health_index_ajusted']]
         income = pd.read_csv('data/processed/income_index.csv')
         income.rename(columns={'index': 'income_index'}, inplace=True)
+        income = income[['Year', 'income_index', 'income_index_ajusted']]
         edu = pd.read_csv('data/processed/edu_index.csv')
         edu.rename(columns={'index': 'edu_index'}, inplace=True)
+        edu = edu[['Year', 'edu_index', 'edu_index_ajusted']]
         
         # calculate the index & save in csv
         df = health.merge(income, on='Year', how='left')
