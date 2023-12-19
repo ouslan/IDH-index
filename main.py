@@ -7,7 +7,7 @@ import os
 from simple_term_menu import TerminalMenu
 from rich.console import Console
 from rich.table import Table
-#git test 5
+#git test 6 mac
 def main():
     main_menu_title = "  Main Menu.\n  Press Q or Esc to quit. \n"
     main_menu_items = ["Download IDH data", "Show Health Index", "Show Education Index", "Show Income Index", "IDH Index", "Graph", "Quit"]
