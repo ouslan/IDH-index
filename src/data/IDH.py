@@ -3,7 +3,6 @@ import numpy as np
 from scipy.stats import gmean
 import world_bank_data as wb
 import os
-from rich.console import Console
 
 class IndexIDH:
 

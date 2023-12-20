@@ -21,26 +21,32 @@ def get_data(range_years: list, data_file):
     -------
     None
     """
-    try:
-        urlretrieve(url, file_name)
-    except:
-        print(f'Error: File for {year} not found')
-        continue
-
-    # unzip the file
-    with zipfile.ZipFile(file_name, 'r') as zip_ref:
-        zip_ref.extractall('data/raw/')
-
-    # remove the zip file and pdf
-    for file in os.listdir('data/raw/'):
-        if file.endswith('.pdf'):
-            os.remove(f'data/raw/{file}')
-        elif file.endswith('.zip'):
-            os.remove(f'data/raw/{file}')
-        elif file.endswith('.csv') and not file.startswith('data'):
-            os.rename(f'data/raw/{file}', f'data/raw/data_{data_file[4:7]}_{year}_raw.csv')
-        else:
+    for year in range(int(range_years[0]), int(range_years[1])+1):
+        if os.path.exists(f'data/raw/data_{data_file[4:7]}_{year}_raw.csv') or os.path.exists(f'data/processed/edu_index.csv'):
             continue
+        else:
+            url = f'https://www2.census.gov/programs-surveys/acs/data/pums/{year}/5-Year/{data_file}'
+            file_name = f'data/raw/raw_ppr_{year}.zip'
+        try:
+            urlretrieve(url, file_name)
+        except:
+            print(f'Error: File for {year} not found')
+            continue
+
+        # unzip the file
+        with zipfile.ZipFile(file_name, 'r') as zip_ref:
+            zip_ref.extractall('data/raw/')
+
+        # remove the zip file and pdf
+        for file in os.listdir('data/raw/'):
+            if file.endswith('.pdf'):
+                os.remove(f'data/raw/{file}')
+            elif file.endswith('.zip'):
+                os.remove(f'data/raw/{file}')
+            elif file.endswith('.csv') and not file.startswith('data'):
+                os.rename(f'data/raw/{file}', f'data/raw/data_{data_file[4:7]}_{year}_raw.csv')
+            else:
+                continue
 
        
 def download(range_years):
