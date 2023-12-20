@@ -5,7 +5,22 @@ from urllib.request import urlretrieve
 import os
 from yaspin import yaspin
 
-def get_data(range_years, data_file):
+def get_data(range_years: list, data_file):
+    """
+    Downloads the data and extracts the data into a csv file. 
+    All data is stored in the data/raw/ folder.
+
+    Parameters
+    ----------
+    range_years: <list>
+        The range of years to download
+    data_file: <str>
+        The name of the file to download
+
+    Returns
+    -------
+    None
+    """
     try:
         urlretrieve(url, file_name)
     except:
@@ -29,6 +44,18 @@ def get_data(range_years, data_file):
 
        
 def download(range_years):
+    """
+    Function to simplyfy and give feedback to the user. It runs the get_data function for both the PPR and HPR data.
+
+    Parameters
+    ----------
+    range_years: <list>
+        The range of years to download
+
+    Returns
+    -------
+    None
+    """
     spin = yaspin(text='Downloading PPR data...', color='blue', spinner='dots')
     spin.start()
     get_data(range_years, data_file='csv_ppr.zip')
