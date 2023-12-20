@@ -6,14 +6,6 @@ import os
 from yaspin import yaspin
 
 def get_data(range_years, data_file):
-    for year in range(int(range_years[0]), int(range_years[1])+1):
-        if os.path.exists(f'data/raw/data_{data_file[4:7]}_{year}_raw.csv') or os.path.exists(f'data/processed/edu_index.csv'):
-            continue
-        else:
-            url = f'https://www2.census.gov/programs-surveys/acs/data/pums/{year}/5-Year/{data_file}'
-            file_name = f'data/raw/raw_ppr_{year}.zip'
-
-            # Download progress bar
             try:
                 urlretrieve(url, file_name)
             except:
@@ -36,7 +28,6 @@ def get_data(range_years, data_file):
                     continue
 
        
-
 def download(range_years):
     spin = yaspin(text='Downloading PPR data...', color='blue', spinner='dots')
     spin.start()
