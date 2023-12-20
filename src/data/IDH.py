@@ -8,15 +8,26 @@ from rich.console import Console
 class IndexIDH:
 
     def health_index(self, debug=False):
-        # get Life expectancy at birth, total (years) for Puerto Rico
+        """
+        Calculate the health index for PR
+
+        Parameters
+        ----------
+        debug : <bool>, optional
+            If True, returns the dataframe of the health index and does not save to csv. The default is False.
+        
+        Returns
+        -------
+        pd.DataFrame
+            The dataframe of the health index.
+        """
+        # get the health index
         pr_health = pd.DataFrame(wb.get_series('SP.DYN.LE00.IN', country='PR', simplify_index=True))
         pr_health.reset_index(inplace=True)
         pr_health.rename(columns={'SP.DYN.LE00.IN': 'index'}, inplace=True)
         pr_health['index'] = pr_health['index'].apply(lambda x: (x-20)/(85-20))
         pr_health['index'] = pr_health['index'].astype(float)
         pr_health['Year'] = pr_health['Year'].astype(int)
-       
-       # create the adjusted index
         pr_health['health_index_ajusted'] = pr_health['index'] * (1-0.08)
         
         if debug:
@@ -25,6 +36,20 @@ class IndexIDH:
             pr_health.to_csv('data/processed/health_index.csv', index=False)
 
     def income_index(self, debug=False):
+        """
+        Calculate the income index for PR
+
+        Parameters
+        ----------
+        debug : <bool>, optional
+            If True, returns the dataframe of the income index and does not save to csv. The default is False.
+        
+        Returns
+        -------
+        pd.DataFrame
+            The dataframe of the income index.
+        """
+        
         # get atlas df from WB
         atlas_df = pd.DataFrame(wb.get_series('NY.GNP.PCAP.CD', country='PR', simplify_index=True))
         atlas_df.reset_index(inplace=True)
@@ -86,7 +111,23 @@ class IndexIDH:
             merge_df.to_csv('data/processed/income_index.csv', index=False)
     
     def edu_index(self, folder_path='data/raw/', debug=False):
+        """
+        Calculate the edu index
 
+        Parameters
+        ----------
+        folder_path : <str>
+            path to the folder where the data is stored. Assumes the data is formatted as data_ppr_YYYY.csv
+        debug : <bool>, optional
+            debug mode, if True, the function will return the dataframe with the index. The default is False.
+
+        Returns
+        -------
+        pd.DataFrame
+            dataframe with the index of the edu index
+        """
+
+        # create the dataframe and loop through the files
         edu_index = pd.DataFrame(columns=['Year', 'edu_index', 'edu_index_ajusted'])
         for file in os.listdir(folder_path):
             if file.startswith('data_ppr'):
@@ -133,6 +174,19 @@ class IndexIDH:
             edu_index.to_csv('data/processed/edu_index.csv', index=False)
  
     def idh_index(self, debug=False):
+        """
+        Calculate the idh index
+
+        Parameters
+        ----------
+        debug : <bool>, optional
+            debug mode, if True, the function will return the dataframe with the index. The default is False.
+
+        Returns
+        -------
+        pd.DataFrame
+            dataframe with the index of the idh index
+        """
 
         # get & calculate the health index
         health = pd.read_csv('data/processed/health_index.csv')
@@ -157,11 +211,30 @@ class IndexIDH:
             df.to_csv('data/processed/idh_index.csv', index=False)
 
     def adjust(self, df):
-            gemetric = gmean(df)
-            amean = np.mean(df)
-            atkinson = 1 - gemetric/amean
-            coef = 1 - atkinson
-            return coef, amean, gemetric, atkinson
+        """
+        Function for calculating the adjustment coefficient using the atkinson's method
+
+        Parameters
+        ----------
+        df : <pd.DataFrame>
+            dataframe with the index of the idh index
+
+        Returns
+        -------
+        <float>
+            coefficient of the adjustment
+        <float>
+            mean of the index
+        <float>
+            geometric mean of the index
+        <float>
+            atkinson's coefficient of the index
+        """
+        gemetric = gmean(df)
+        amean = np.mean(df)
+        atkinson = 1 - gemetric/amean
+        coef = 1 - atkinson
+        return coef, amean, gemetric, atkinson
 
 if __name__ == "__main__":
     # # generate csv file for 2009-2020 for the education index
