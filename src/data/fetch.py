@@ -6,26 +6,26 @@ import os
 from yaspin import yaspin
 
 def get_data(range_years, data_file):
-            try:
-                urlretrieve(url, file_name)
-            except:
-                print(f'Error: File for {year} not found')
-                continue
+    try:
+        urlretrieve(url, file_name)
+    except:
+        print(f'Error: File for {year} not found')
+        continue
 
-            # unzip the file
-            with zipfile.ZipFile(file_name, 'r') as zip_ref:
-                zip_ref.extractall('data/raw/')
+    # unzip the file
+    with zipfile.ZipFile(file_name, 'r') as zip_ref:
+        zip_ref.extractall('data/raw/')
 
-            # remove the zip file and pdf
-            for file in os.listdir('data/raw/'):
-                if file.endswith('.pdf'):
-                    os.remove(f'data/raw/{file}')
-                elif file.endswith('.zip'):
-                    os.remove(f'data/raw/{file}')
-                elif file.endswith('.csv') and not file.startswith('data'):
-                    os.rename(f'data/raw/{file}', f'data/raw/data_{data_file[4:7]}_{year}_raw.csv')
-                else:
-                    continue
+    # remove the zip file and pdf
+    for file in os.listdir('data/raw/'):
+        if file.endswith('.pdf'):
+            os.remove(f'data/raw/{file}')
+        elif file.endswith('.zip'):
+            os.remove(f'data/raw/{file}')
+        elif file.endswith('.csv') and not file.startswith('data'):
+            os.rename(f'data/raw/{file}', f'data/raw/data_{data_file[4:7]}_{year}_raw.csv')
+        else:
+            continue
 
        
 def download(range_years):
