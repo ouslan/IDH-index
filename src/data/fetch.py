@@ -2,23 +2,15 @@ import pandas as pd
 import zipfile
 from src.data.IDH import IndexIDH
 from urllib.request import urlretrieve
-from yaspin import yaspin
 import os
+from yaspin import yaspin
 
-console = Console()
 def get_data(range_years, data_file):
-    
-    for year in range(int(range_years[0]), int(range_years[1])+1):
-        spinner = yaspin(text='Downloading PPR data from the Census Bureau...', color='blue', spinner='dots')
-        if os.path.exists(f'data/raw/data_{data_file[4:7]}_{year}_raw.csv') or os.path.exists(f'data/processed/edu_index.csv'):
-            continue
-        else:
-            url = f'https://www2.census.gov/programs-surveys/acs/data/pums/{year}/5-Year/{data_file}'
-            file_name = f'data/raw/raw_ppr_{year}.zip'
-            
-            # Download progress bar
-            spinner = yaspin(text='Downloading PPR data from the Census Bureau...', color='blue', spinner='dots')
-            urlretrieve(url, file_name)
+            try:
+                urlretrieve(url, file_name)
+            except:
+                print(f'Error: File for {year} not found')
+                continue
 
             # unzip the file
             with zipfile.ZipFile(file_name, 'r') as zip_ref:
@@ -36,24 +28,23 @@ def get_data(range_years, data_file):
                     continue
 
        
-
-def calculate(range_years):
-    spinner = yaspin(text='Downloading PPR data from the Census Bureau...', color='blue', spinner='dots')
-    spinner.start()
+def download(range_years):
+    spin = yaspin(text='Downloading PPR data...', color='blue', spinner='dots')
+    spin.start()
     get_data(range_years, data_file='csv_ppr.zip')
-    spinner.stop()
-    spinner = yaspin(text='Downloading HPR data from the Census Bureau...', color='green', spinner='dots')
-    spinner.start()
+    spin.stop() 
+    spin = yaspin(text='Downloading HPR data...', color='yellow', spinner='dots')
+    spin.start()
     get_data(range_years, data_file='csv_hpr.zip')
-    spinner.stop()
-    spinner = yaspin(text='Calculating IDH...', color='red', spinner='dots')
-    spinner.start()
+    spin.stop()
+    spin = yaspin(text='Calculating IDH data...', color='green', spinner='dots')
+    spin.start()
     IDH = IndexIDH()
     IDH.edu_index('data/raw/')
     IDH.income_index()
     IDH.health_index()
     IDH.idh_index()
-    spinner.stop()
+    spin.stop()
     
     # for file in os.listdir('data/raw/'):
     #     if file.endswith('raw.csv'):
