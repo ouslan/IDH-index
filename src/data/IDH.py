@@ -62,7 +62,7 @@ class IndexIDH:
         gni_df['gni'] = gni_df['gni'].astype(float)
 
         # ajust the index
-        ajusted_df = pd.DataFrame(columns=['Year', 'coef', 'atkinson'])
+        ajusted_df = pd.DataFrame([], columns=['Year', 'coef', 'atkinson'])
         for file in os.listdir('data/raw/'):
             if file.startswith('data_hpr'):
                 ajust_df = pd.read_csv('data/raw/' + file, low_memory=False)
@@ -79,7 +79,9 @@ class IndexIDH:
                 ajust_df = ajust_df.dropna()
                 # get coefficient of ajustment
                 coef, amean, gemetric, atkinson = self.adjust(ajust_df)
-                ajusted_df = pd.concat([ajusted_df, pd.DataFrame([[int(file.split('_')[2]), coef, atkinson]], columns=['Year', 'coef', 'atkinson'])])
+                ajusted_df = pd.concat([
+                    ajusted_df if not ajusted_df.empty else None,
+                    pd.DataFrame([[int(file.split('_')[2]), coef, atkinson]], columns=['Year', 'coef', 'atkinson'])])
             else:
                 continue
         # merge the two dataframes
@@ -127,7 +129,7 @@ class IndexIDH:
         """
 
         # create the dataframe and loop through the files
-        edu_index = pd.DataFrame(columns=['Year', 'edu_index', 'edu_index_ajusted'])
+        edu_index = pd.DataFrame([],columns=['Year', 'edu_index', 'edu_index_ajusted'])
         for file in os.listdir(folder_path):
             if file.startswith('data_ppr'):
                 df = pd.read_csv(folder_path + file, low_memory=False)
@@ -162,7 +164,9 @@ class IndexIDH:
                 edu_value = (mean_sch/15 + exp_sch/18) / 2
                 edu_value_ajusted = coef * edu_value
                 year = file.split('_')[2]
-                edu_index = pd.concat([edu_index, pd.DataFrame([[year, edu_value, edu_value_ajusted, atkinson]], columns=['Year', 'edu_index', 'edu_index_ajusted', 'atkinson'])])
+                edu_index = pd.concat([
+                    edu_index if not edu_index.empty else None,
+                    pd.DataFrame([[year, edu_value, edu_value_ajusted, atkinson]], columns=['Year', 'edu_index', 'edu_index_ajusted', 'atkinson'])])
                 edu_index = edu_index.sort_values(by='Year', ascending=True)
             else:
                 continue

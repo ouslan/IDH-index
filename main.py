@@ -1,13 +1,11 @@
-from src.data.IDH import IndexIDH
 from src.data.fetch import download
 import pandas as pd
-from time import sleep
 import numpy as np
 import os
 from simple_term_menu import TerminalMenu
 from rich.console import Console
 from rich.table import Table
-#git test 7 mac
+
 def main():
     main_menu_title = "  Main Menu.\n  Press Q or Esc to quit. \n"
     main_menu_items = ["Download IDH data", "Show Health Index", "Show Education Index", "Show Income Index", "IDH Index", "Graph", "Quit"]
@@ -41,9 +39,9 @@ def main():
                 table.add_column("Health Index")
                 table.add_column("Health Index Ajusted")
                 for i in range(len(df)):
-                    table.add_row(str(np.round(df.iloc[i,0], decimals=2)),
-                                str(np.round(df.iloc[i,1],decimals=2)),
-                                str(np.round(df.iloc[i,2], decimals=2)))
+                    table.add_row(str(np.round(df.iloc[i,0], decimals=4)),
+                                str(np.round(df.iloc[i,1],decimals=4)),
+                                str(np.round(df.iloc[i,2], decimals=4)))
                 console = Console()
                 console.print(table)
                 input("Press Enter to continue...")
@@ -58,9 +56,9 @@ def main():
                 table.add_column("Education Index")
                 table.add_column("Education Index Ajusted")
                 for i in range(len(df)):
-                    table.add_row(str(np.round(df.iloc[i,0], decimals=2)), 
-                                str(np.round(df.iloc[i,1],decimals=2)), 
-                                str(np.round(df.iloc[i,2], decimals=2)))
+                    table.add_row(str(np.round(df.iloc[i,0], decimals=4)), 
+                                str(np.round(df.iloc[i,1],decimals=4)), 
+                                str(np.round(df.iloc[i,2], decimals=4)))
                 console = Console()
                 console.print(table)
                 input("Press Enter to continue...")
@@ -76,9 +74,9 @@ def main():
                 table.add_column("Income Index")
                 table.add_column("Income Index Ajusted")
                 for i in range(len(df)):
-                    table.add_row(str(np.round(df.iloc[i,0], decimals=2)), 
-                                str(np.round(df.iloc[i,1],decimals=2)), 
-                                str(np.round(df.iloc[i,2], decimals=2)))
+                    table.add_row(str(np.round(df.iloc[i,0], decimals=4)), 
+                                str(np.round(df.iloc[i,1],decimals=4)), 
+                                str(np.round(df.iloc[i,2], decimals=4)))
                 console = Console()
                 console.print(table)
                 input("Press Enter to continue...")
@@ -93,9 +91,9 @@ def main():
                 table.add_column("IDH Index")
                 table.add_column("IDH Index Ajusted")
                 for i in range(len(df)):
-                    table.add_row(str(np.round(df.iloc[i,0], decimals=2)), 
-                                str(np.round(df.iloc[i,1],decimals=2)),
-                                str(np.round(df.iloc[i,2], decimals=2)))
+                    table.add_row(str(np.round(df.iloc[i,0], decimals=4)), 
+                                str(np.round(df.iloc[i,1],decimals=4)),
+                                str(np.round(df.iloc[i,2], decimals=4)))
                 console = Console()
                 console.print(table)
                 input("Press Enter to continue...")
