@@ -28,6 +28,7 @@ class IndexIDH:
         pr_health['index'] = pr_health['index'].astype(float)
         pr_health['Year'] = pr_health['Year'].astype(int)
         pr_health['health_index_ajusted'] = pr_health['index'] * (1-0.08)
+        pr_health['atkinson'] = 0.08
         
         if debug:
             return pr_health
