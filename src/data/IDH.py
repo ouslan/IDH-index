@@ -167,7 +167,7 @@ class IndexIDH:
                 year = file.split('_')[2]
                 edu_index = pd.concat([
                     edu_index if not edu_index.empty else None,
-                    pd.DataFrame([[year, edu_value, edu_value_ajusted, atkinson]], columns=['Year', 'edu_index', 'edu_index_ajusted', 'atkinson'])])
+                    pd.DataFrame([[year, edu_value, edu_value_ajusted, atkinson ]], columns=['Year', 'edu_index', 'edu_index_ajusted', 'atkinson'])])
                 edu_index = edu_index.sort_values(by='Year', ascending=True)
             else:
                 continue
@@ -235,7 +235,7 @@ class IndexIDH:
             atkinson's coefficient of the index
         """
         gemetric = gmean(df)
-        amean = np.mean(df)
+        amean = df.mean()
         atkinson = 1 - gemetric/amean
         coef = 1 - atkinson
         return coef, amean, gemetric, atkinson
