@@ -138,11 +138,9 @@ class IndexIDH:
                 
                 # calcualte the mean of years of schooling
                 edu_sch = df[df['AGEP'] >= 25].copy()
-                edu_sch['scholing'] =  edu_sch['SCHL']
+                edu_sch['scholing'] = edu_sch['SCHL']
                 edu_sch.reset_index(inplace=True)
-                edu_sch['scholing'].replace({3:1, 4:2, 5:3, 6:4, 7:5, 8:6, 9:7, 10:8, 11:9, 
-                                        12:10, 13:11, 14:12, 15:13, 15:13, 16:13, 17:13, 
-                                        18:13.5, 19:14, 20:15, 21:17, 22:19, 23:19, 24:23}, inplace=True)
+                edu_sch['scholing'] = edu_sch['scholing'].apply(lambda x: self.to_category(x))
                 edu_sch['enroled'] = np.where(edu_sch['scholing'] > 1, 1, 0)
                 mean_sch = edu_sch['scholing'].mean()
 
@@ -240,6 +238,14 @@ class IndexIDH:
         coef = 1 - atkinson
         return coef, amean, gemetric, atkinson
 
+    def to_category(self, x):
+        mapping = {4: 1, 5: 2, 6: 3, 7: 4, 8: 5, 
+                9: 6, 10: 7, 11: 8, 12: 9, 13: 10,
+                14: 11, 15: 11, 16: 12, 17: 12, 
+                18: 12.5, 19: 13, 20: 14, 21: 16,
+        }
+        return mapping.get(x, 0) if x <= 21 else 18
+    
 if __name__ == "__main__":
     # # generate csv file for 2009-2020 for the education index
     idh = IndexIDH()
