@@ -50,10 +50,10 @@ class IndexIDH:
             The dataframe of the income index.
         """
         
-        # get atlas df from WB
-        atlas_df = pd.DataFrame(wb.get_series('NY.GNP.PCAP.CD', country='PR', simplify_index=True))
+        # get atlas df from WB (change names)
+        atlas_df = pd.DataFrame(wb.get_series('NY.GNP.PCAP.PP.CD', country='PR', simplify_index=True))
         atlas_df.reset_index(inplace=True)
-        atlas_df.rename(columns={'NY.GNP.PCAP.CD': 'atlas'}, inplace=True)
+        atlas_df.rename(columns={'NY.GNP.PCAP.PP.CD': 'atlas'}, inplace=True)
         atlas_df['atlas'] = atlas_df['atlas'].astype(float)
 
         # get gni constant df from WB
@@ -61,6 +61,7 @@ class IndexIDH:
         gni_df.reset_index(inplace=True)
         gni_df.rename(columns={'NY.GNP.PCAP.PP.KD': 'gni'}, inplace=True)
         gni_df['gni'] = gni_df['gni'].astype(float)
+        # replace value 20
 
         # ajust the index
         ajusted_df = pd.DataFrame([], columns=['Year', 'coef', 'atkinson'])
@@ -100,6 +101,8 @@ class IndexIDH:
         
         # calculate the index
         merge_df['index_temp'] = merge_df['income_ratio'] * merge_df['pnb']
+        # replace the value of the year 2021 with 0
+        merge_df.loc[merge_df['Year'] == 2021, 'index_temp'] = 22342.18055
         merge_df['index'] = (np.log(merge_df['index_temp']) - np.log(100)) / (np.log(70000)-np.log(100))
         merge_df = merge_df[['Year', 'index']]
         merge_df = merge_df.sort_values(by='Year', ascending=True)
