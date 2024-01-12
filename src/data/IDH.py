@@ -94,7 +94,7 @@ class IndexIDH:
                 df = df[['AGEP', 'SCH', 'SCHL']]
                 
                 # calcualte the mean of years of schooling
-                edu_sch = df[df['AGEP'] > 25].copy()
+                edu_sch = df[df['AGEP'] >= 25].copy()
                 edu_sch['scholing'] =  edu_sch['SCHL']
                 edu_sch.reset_index(inplace=True)
                 edu_sch['scholing'].replace({3:1, 4:2, 5:3, 6:4, 7:5, 8:6, 9:7, 10:8, 11:9, 
