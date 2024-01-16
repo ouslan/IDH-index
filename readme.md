@@ -7,9 +7,9 @@ This Python script calculates the Human Development Index (HDI) for Puerto Rico 
 Before running the script, make sure you have the following libraries installed:
 
 ```bash
-pip install -r requirements.txt
 git clone https://github.com/unclearcoder/IDH-index.git
 cd IDH-index
+pip install -r requirements.txt
 python main.py
 ```
 
