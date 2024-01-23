@@ -33,6 +33,8 @@ class IndexIDH:
         if debug:
             return pr_health
         else:
+            # round to 2 decimal places
+            pr_health = pr_health.round(2)
             pr_health.to_csv('data/processed/health_index.csv', index=False)
 
     def income_index(self, debug=False):
@@ -81,9 +83,9 @@ class IndexIDH:
                 ajust_df = ajust_df.dropna()
                 # get coefficient of ajustment
                 coef, amean, gemetric, atkinson = self.adjust(ajust_df)
-                ajusted_df = pd.concat([
-                    ajusted_df if not ajusted_df.empty else None,
-                    pd.DataFrame([[int(file.split('_')[2]), coef, atkinson]], columns=['Year', 'coef', 'atkinson'])])
+                ajusted_df = pd.concat([ajusted_df if not ajusted_df.empty else None,
+                                        pd.DataFrame([[int(file.split('_')[2]), coef, atkinson]], 
+                                                        columns=['Year', 'coef', 'atkinson'])])
             else:
                 continue
         # merge the two dataframes
@@ -113,6 +115,8 @@ class IndexIDH:
         if debug:
             return merge_df
         else:
+            # round to 2 decimals
+            merge_df = merge_df.round(2)
             merge_df.to_csv('data/processed/income_index.csv', index=False)
     
     def edu_index(self, folder_path='data/raw/', debug=False):
@@ -176,6 +180,8 @@ class IndexIDH:
         if debug:
             return edu_index    
         else:
+            # round to 2 decimals
+            edu_index = edu_index.round(2)
             edu_index.to_csv('data/processed/edu_index.csv', index=False)
  
     def idh_index(self, debug=False):
@@ -213,6 +219,8 @@ class IndexIDH:
         if debug:
             return df
         else:
+            # round to 2 decimals
+            df = df.round(2)
             df.to_csv('data/processed/idh_index.csv', index=False)
 
     def adjust(self, df):
