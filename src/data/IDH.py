@@ -23,8 +23,8 @@ class IndexIDH:
         # get the health index
         pr_health = pd.DataFrame(wb.get_series('SP.DYN.LE00.IN', country='PR', simplify_index=True))
         pr_health.reset_index(inplace=True)
-        pr_health.rename(columns={'SP.DYN.LE00.IN': 'index'}, inplace=True)
-        pr_health['index'] = pr_health['index'].apply(lambda x: (x-20)/(85-20))
+        pr_health.rename(columns={'SP.DYN.LE00.IN': 'value'}, inplace=True)
+        pr_health['index'] = pr_health['value'].apply(lambda x: (x-20)/(85-20))
         pr_health['index'] = pr_health['index'].astype(float)
         pr_health['Year'] = pr_health['Year'].astype(int)
         pr_health['health_index_ajusted'] = pr_health['index'] * (1-0.08)
@@ -168,7 +168,7 @@ class IndexIDH:
                 year = file.split('_')[2]
                 edu_index = pd.concat([
                     edu_index if not edu_index.empty else None,
-                    pd.DataFrame([[year, edu_value, edu_value_ajusted, atkinson ]], columns=['Year', 'edu_index', 'edu_index_ajusted', 'atkinson'])])
+                    pd.DataFrame([[year, edu_value, edu_value_ajusted, atkinson, mean_sch, exp_sch]], columns=['Year', 'edu_index', 'edu_index_ajusted', 'atkinson', "Mean years of schooling", "Expected years of schooling"])], ignore_index=True)
                 edu_index = edu_index.sort_values(by='Year', ascending=True)
             else:
                 continue
