@@ -30,6 +30,10 @@ class IndexIDH:
         pr_health['health_index_ajusted'] = pr_health['index'] * (1-0.08)
         pr_health['atkinson'] = 0.08
         
+        # growth rate for health index and adjusted health index
+        pr_health['growth_rate_health_index'] = pr_health['index'].pct_change() * 100
+        pr_health['growth_rate_health_index_ajusted'] = pr_health['health_index_ajusted'].pct_change() * 100
+        
         if debug:
             return pr_health
         else:
@@ -111,7 +115,10 @@ class IndexIDH:
         merge_df = merge_df.merge(ajusted_df, on='Year', how='left')
         merge_df['income_index_ajusted'] = merge_df['coef'] * merge_df['index']
         merge_df.drop(['coef'], axis=1, inplace=True)
-        
+        # growth rate for income index and adjusted income index
+        merge_df['growth_rate_income_index'] = merge_df['index'].pct_change() * 100
+        merge_df['growth_rate_income_index_ajusted'] = merge_df['income_index_ajusted'].pct_change() * 100
+
         if debug:
             return merge_df
         else:
@@ -176,7 +183,9 @@ class IndexIDH:
                 edu_index = edu_index.sort_values(by='Year', ascending=True)
             else:
                 continue
-
+        # growth rate for edu index & edu index ajusted
+        edu_index['growth_rate'] = edu_index['edu_index'].pct_change() * 100
+        edu_index['growth_rate_ajusted'] = edu_index['edu_index_ajusted'].pct_change() * 100
         if debug:
             return edu_index    
         else:
@@ -216,6 +225,9 @@ class IndexIDH:
         df['index'] = (df['health_index'] * df['income_index'] * df['edu_index']) ** (1/3)
         df['index_ajusted'] = (df['health_index_ajusted'] * df['income_index_ajusted'] * df['edu_index_ajusted']) ** (1/3)
         df.dropna(inplace=True)
+        #  groth rate for idh index & idh index ajusted
+        df['growth_rate'] = df['index'].pct_change() * 100
+        df['growth_rate_ajusted'] = df['index_ajusted'].pct_change() * 100
         if debug:
             return df
         else:
