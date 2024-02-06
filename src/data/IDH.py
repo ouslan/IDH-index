@@ -33,12 +33,15 @@ class IndexIDH:
         # growth rate for health index and adjusted health index
         pr_health['growth_rate_health_index'] = pr_health['index'].pct_change() * 100
         pr_health['growth_rate_health_index_ajusted'] = pr_health['health_index_ajusted'].pct_change() * 100
+
+        # replace missing values with the previouse year
+        pr_health = pr_health.fillna(method='ffill')
         
         if debug:
             return pr_health
         else:
             # round to 2 decimal places
-            pr_health = pr_health.round(2)
+            # pr_health = pr_health.round(2)
             pr_health.to_csv('data/processed/health_index.csv', index=False)
 
     def income_index(self, debug=False):
@@ -123,7 +126,7 @@ class IndexIDH:
             return merge_df
         else:
             # round to 2 decimals
-            merge_df = merge_df.round(2)
+            # merge_df = merge_df.round(2)
             merge_df.to_csv('data/processed/income_index.csv', index=False)
     
     def edu_index(self, folder_path='data/raw/', debug=False):
@@ -190,7 +193,7 @@ class IndexIDH:
             return edu_index    
         else:
             # round to 2 decimals
-            edu_index = edu_index.round(2)
+            # edu_index = edu_index.round(2)
             edu_index.to_csv('data/processed/edu_index.csv', index=False)
  
     def idh_index(self, debug=False):
@@ -232,7 +235,7 @@ class IndexIDH:
             return df
         else:
             # round to 2 decimals
-            df = df.round(2)
+            # df = df.round(2)
             df.to_csv('data/processed/idh_index.csv', index=False)
 
     def adjust(self, df):

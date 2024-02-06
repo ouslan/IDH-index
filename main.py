@@ -28,7 +28,7 @@ def main():
     while not main_menu_exit:
         main_sel = main_menu.show()
         if main_sel == 0:
-            download(['2012','2021'])
+            download(['2012','2022'])
         # show the health index
         elif main_sel == 1:
             if os.path.isfile("data/processed/idh_index.csv"):
