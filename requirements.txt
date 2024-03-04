@@ -1,7 +1,0 @@
-pandas
-numpy
-world_bank_data
-scipy
-simple-term-menu
-rich
-yaspin
