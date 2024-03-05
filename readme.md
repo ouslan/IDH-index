@@ -9,13 +9,18 @@ Before running the script, make sure you have the following libraries installed:
 ```bash
 git clone https://github.com/unclearcoder/IDH-index.git
 cd IDH-index
-pip install -r requirements.txt
-python main.py
+conda env create -f environment.yml
 ```
+
+This will create a new conda environment with the required libraries.
+
+## Screenshots
+![record](assets/Kooha-2024-03-05-17-49-41.gif)
 
 ## Usage
 
 ### IDH Index module
+
 ```python
 from IndexIDH import IndexIDH
 
