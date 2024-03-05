@@ -76,7 +76,7 @@ class IndexIDH:
         ajusted_df = pd.DataFrame([], columns=['Year', 'coef', 'atkinson'])
         for file in os.listdir('data/raw/'):
             if file.startswith('data_hpr'):
-                ajust_df = pd.read_csv('data/raw/' + file, low_memory=False)
+                ajust_df = pd.read_csv('data/raw/' + file, engine="pyarrow")
                 ajust_df = ajust_df['HINCP'] # use HINCS
                 ajust_df = ajust_df.sort_values(ascending=True)
                 ajust_df = ajust_df[ajust_df > 0]
@@ -150,7 +150,7 @@ class IndexIDH:
         edu_index = pd.DataFrame([],columns=['Year', 'edu_index', 'edu_index_ajusted'])
         for file in os.listdir(folder_path):
             if file.startswith('data_ppr'):
-                df = pd.read_csv(folder_path + file, low_memory=False)
+                df = pd.read_csv(folder_path + file, engine="pyarrow")
                 df = df[['AGEP', 'SCH', 'SCHL']]
                 
                 # calcualte the mean of years of schooling
