@@ -1,4 +1,5 @@
 from src.data.fetch import download
+from src.visualization.visualize import Graphs
 import pandas as pd
 import numpy as np
 import os
@@ -8,7 +9,7 @@ from rich.table import Table
 
 def main():
     main_menu_title = "  Main Menu.\n  Press Q or Esc to quit. \n"
-    main_menu_items = ["Download IDH data", "Show Health Index", "Show Education Index", "Show Income Index", "IDH Index", "Graph", "Quit"]
+    main_menu_items = ["Download IDH data", "Show Health Index", "Show Education Index", "Show Income Index", "IDH Index", "IDH Graph", "IDH Adjusted Graph", "Quit"]
     main_menu_cursor = "> "
     main_menu_cursor_style = ("fg_red", "bold")
     main_menu_style = ("bg_red", "fg_yellow")
@@ -99,7 +100,19 @@ def main():
                 input("Press Enter to continue...")
             else:
                 print("No data found, please download the data first")
-        elif main_sel == 6 or main_sel == None:
+        elif main_sel == 5:
+            if os.path.isfile("data/processed/idh_index.csv"):
+                G = Graphs("data/processed/idh_index.csv")
+                G.plot_graph('Year', 'index', 'health_index', 'income_index', 'edu_index', 'IDH Index')
+                input("Press Enter to continue...")
+            else:
+                print("No data found, please download the data first")
+        elif main_sel == 6:
+            if os.path.isfile("data/processed/idh_index.csv"):
+                G = Graphs("data/processed/idh_index.csv")
+                G.plot_graph('Year', 'index_ajusted', 'health_index_ajusted', 'income_index_ajusted', 'edu_index_ajusted', 'IDH Index Ajusted')
+
+        elif main_sel == 7 or main_sel == None:
             main_menu_exit = True
 
 if __name__ == "__main__":

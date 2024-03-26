@@ -14,3 +14,4 @@ dependencies:
       - yaspin==3.0.1
       - simple_term_menu==1.6.4
       - rich==13.7.1
+      - plotext==5.2.8
