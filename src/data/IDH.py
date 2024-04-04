@@ -109,10 +109,10 @@ class IndexIDH:
         merge_df.drop(['index'], axis=1, inplace=True)
         
         # calculate the index
-        merge_df['index_temp'] = merge_df['income_ratio'] * merge_df['pnb']
+        #merge_df['index_temp'] =  merge_df['pnb']
         # replace the value of the year 2021 with 0
-        merge_df.loc[merge_df['Year'] == 2021, 'index_temp'] = 22342.18055
-        merge_df['index'] = (np.log(merge_df['index_temp']) - np.log(100)) / (np.log(70000)-np.log(100))
+        # merge_df.loc[merge_df['Year'] == 2021, 'index_temp'] = 22342.18055
+        merge_df['index'] = (np.log(merge_df['pnb']) - np.log(100)) / (np.log(75000)-np.log(100))
         merge_df = merge_df[['Year', 'index']]
         merge_df = merge_df.sort_values(by='Year', ascending=True)
         merge_df = merge_df.merge(ajusted_df, on='Year', how='left')
