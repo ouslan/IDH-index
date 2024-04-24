@@ -3,6 +3,7 @@ import numpy as np
 from scipy.stats import gmean
 import world_bank_data as wb
 import os
+import polars as pl
 
 class IndexIDH:
 
@@ -21,7 +22,7 @@ class IndexIDH:
             The dataframe of the health index.
         """
         # get the health index
-        pr_health = pd.DataFrame(wb.get_series('SP.DYN.LE00.IN', country='PR', simplify_index=True))
+        pr_health = pl.DataFrame(wb.get_series('SP.DYN.LE00.IN', country='PR', simplify_index=True))
         pr_health.reset_index(inplace=True)
         pr_health.rename(columns={'SP.DYN.LE00.IN': 'value'}, inplace=True)
         pr_health['index'] = pr_health['value'].apply(lambda x: (x-20)/(85-20))
@@ -35,7 +36,7 @@ class IndexIDH:
         pr_health['growth_rate_health_index_ajusted'] = pr_health['health_index_ajusted'].pct_change() * 100
 
         # replace missing values with the previouse year
-        pr_health = pr_health.fillna(method='ffill')
+        pr_health = pr_health.fill()
         
         if debug:
             return pr_health
@@ -60,23 +61,23 @@ class IndexIDH:
         """
         
         # get atlas df from WB (change names)
-        atlas_df = pd.DataFrame(wb.get_series('NY.GNP.PCAP.PP.CD', country='PR', simplify_index=True))
+        atlas_df = pl.DataFrame(wb.get_series('NY.GNP.PCAP.PP.CD', country='PR', simplify_index=True))
         atlas_df.reset_index(inplace=True)
         atlas_df.rename(columns={'NY.GNP.PCAP.PP.CD': 'atlas'}, inplace=True)
         atlas_df['atlas'] = atlas_df['atlas'].astype(float)
 
         # get gni constant df from WB
-        gni_df = pd.DataFrame(wb.get_series('NY.GNP.PCAP.PP.KD', country='PR', simplify_index=True))
+        gni_df = pl.DataFrame(wb.get_series('NY.GNP.PCAP.PP.KD', country='PR', simplify_index=True))
         gni_df.reset_index(inplace=True)
         gni_df.rename(columns={'NY.GNP.PCAP.PP.KD': 'gni'}, inplace=True)
         gni_df['gni'] = gni_df['gni'].astype(float)
         # replace value 20
 
         # ajust the index
-        ajusted_df = pd.DataFrame([], columns=['Year', 'coef', 'atkinson'])
+        ajusted_df = pl.DataFrame([], columns=['Year', 'coef', 'atkinson'])
         for file in os.listdir('data/raw/'):
             if file.startswith('data_hpr'):
-                ajust_df = pd.read_csv('data/raw/' + file, engine="pyarrow")
+                ajust_df = pl.read_csv('data/raw/' + file)
                 ajust_df = ajust_df['HINCP'] # use HINCS
                 ajust_df = ajust_df.sort_values(ascending=True)
                 ajust_df = ajust_df[ajust_df > 0]
@@ -90,8 +91,8 @@ class IndexIDH:
                 ajust_df = ajust_df.dropna()
                 # get coefficient of ajustment
                 coef, amean, gemetric, atkinson = self.adjust(ajust_df)
-                ajusted_df = pd.concat([ajusted_df if not ajusted_df.empty else None,
-                                        pd.DataFrame([[int(file.split('_')[2]), coef, atkinson]], 
+                ajusted_df = pl.concat([ajusted_df if not ajusted_df.empty else None,
+                                        pl.DataFrame([[int(file.split('_')[2]), coef, atkinson]], 
                                                         columns=['Year', 'coef', 'atkinson'])])
             else:
                 continue
@@ -102,7 +103,7 @@ class IndexIDH:
         inc_df['Year'] = inc_df['Year'].astype(int)
 
         # merge the income index with the pnb.csv file
-        pnb = pd.read_csv('data/external/pnb.csv')
+        pnb = pl.read_csv('data/external/pnb.csv')
         merge_df = inc_df.merge(pnb, on='Year', how='left')
         merge_df = merge_df.dropna()
         merge_df.reset_index(inplace=True)
@@ -147,14 +148,14 @@ class IndexIDH:
         """
 
         # create the dataframe and loop through the files
-        edu_index = pd.DataFrame([],columns=['Year', 'edu_index', 'edu_index_ajusted'])
+        edu_index = pl.DataFrame()
         for file in os.listdir(folder_path):
             if file.startswith('data_ppr'):
-                df = pd.read_csv(folder_path + file, engine="pyarrow")
+                df = pl.read_csv(folder_path + file, null_values=['N.A.'])
                 df = df[['AGEP', 'SCH', 'SCHL']]
                 
                 # calcualte the mean of years of schooling
-                edu_sch = df[df['AGEP'] >= 25].copy()
+                edu_sch = df[df['AGEP'] >= 25]
                 edu_sch['scholing'] = edu_sch['SCHL']
                 edu_sch.reset_index(inplace=True)
                 edu_sch['scholing'] = edu_sch['scholing'].apply(lambda x: self.to_category(x))
@@ -180,9 +181,9 @@ class IndexIDH:
                 edu_value = (mean_sch/15 + exp_sch/18) / 2
                 edu_value_ajusted = coef * edu_value
                 year = file.split('_')[2]
-                edu_index = pd.concat([
+                edu_index = pl.concat([
                     edu_index if not edu_index.empty else None,
-                    pd.DataFrame([[year, edu_value, edu_value_ajusted, atkinson, mean_sch, exp_sch]], columns=['Year', 'edu_index', 'edu_index_ajusted', 'atkinson', "Mean years of schooling", "Expected years of schooling"])], ignore_index=True)
+                    pl.DataFrame([[year, edu_value, edu_value_ajusted, atkinson, mean_sch, exp_sch]], columns=['Year', 'edu_index', 'edu_index_ajusted', 'atkinson', "Mean years of schooling", "Expected years of schooling"])], ignore_index=True)
                 edu_index = edu_index.sort_values(by='Year', ascending=True)
             else:
                 continue
@@ -212,13 +213,13 @@ class IndexIDH:
         """
 
         # get & calculate the health index
-        health = pd.read_csv('data/processed/health_index.csv')
+        health = pl.read_csv('data/processed/health_index.csv')
         health.rename(columns={'index': 'health_index'}, inplace=True)
         health = health[['Year', 'health_index', 'health_index_ajusted']]
-        income = pd.read_csv('data/processed/income_index.csv')
+        income = pl.read_csv('data/processed/income_index.csv')
         income.rename(columns={'index': 'income_index'}, inplace=True)
         income = income[['Year', 'income_index', 'income_index_ajusted']]
-        edu = pd.read_csv('data/processed/edu_index.csv')
+        edu = pl.read_csv('data/processed/edu_index.csv')
         edu.rename(columns={'index': 'edu_index'}, inplace=True)
         edu = edu[['Year', 'edu_index', 'edu_index_ajusted']]
         
