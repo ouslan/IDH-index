@@ -215,7 +215,7 @@ class IndexIDH:
         # get & calculate the health index
         health = pd.read_csv('data/processed/health_index.csv')
         health.rename(columns={'index': 'health_index'}, inplace=True)
-        health = health[['Year', 'health_index', 'health_index_ajusted']]
+        health = health[['Year', 'health_index', 'health_index_adjusted']]
         income = pd.read_csv('data/processed/income_index.csv')
         income.rename(columns={'index': 'income_index'}, inplace=True)
         income = income[['Year', 'income_index', 'income_index_ajusted']]
@@ -227,7 +227,7 @@ class IndexIDH:
         df = health.merge(income, on='Year', how='left')
         df = df.merge(edu, on='Year', how='left')
         df['index'] = (df['health_index'] * df['income_index'] * df['edu_index']) ** (1/3)
-        df['index_ajusted'] = (df['health_index_ajusted'] * df['income_index_ajusted'] * df['edu_index_ajusted']) ** (1/3)
+        df['index_ajusted'] = (df['health_index_adjusted'] * df['income_index_ajusted'] * df['edu_index_ajusted']) ** (1/3)
         df.dropna(inplace=True)
         #  groth rate for idh index & idh index ajusted
         df['growth_rate'] = df['index'].pct_change() * 100
