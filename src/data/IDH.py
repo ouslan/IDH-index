@@ -4,7 +4,6 @@ import numpy as np
 from scipy.stats import gmean
 import world_bank_data as wb
 import os
-import wbpy
 
 class IndexIDH:
 
@@ -94,7 +93,7 @@ class IndexIDH:
                     pl.col("HINCP") <= pl.col("HINCP").quantile(0.995))
 
                 # get coefficient of adjustmet
-                coef, amean, gemetric, atkinson = adjust(adjust_df)
+                coef, amean, gemetric, atkinson = self.adjust(adjust_df)
                 tmp_df = pl.DataFrame({
                     "Year": int(file.split('_')[2]),
                     "coef": coef[0][0],
