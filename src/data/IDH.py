@@ -27,7 +27,7 @@ class IndexIDH:
         
         df = df.rename({"SP.DYN.LE00.IN":"life_exp"}).fill_null(strategy="forward")
         df = df.with_columns(
-            pl.col("Year").cast(pl.Int32),
+            pl.col("Year").cast(pl.Int64),
             ((pl.col("life_exp") - 20) / (85-20)).alias("health_index"),
             (((pl.col("life_exp") - 20) / (85-20)) * (1-0.08)).alias("health_index_adjusted"),
             arkinson=0.08
@@ -61,74 +61,70 @@ class IndexIDH:
         """
         
         # get atlas df from WB (change names)
-        atlas_df = pd.DataFrame(wb.get_series('NY.GNP.PCAP.PP.CD', country='PR', simplify_index=True))
-        atlas_df.reset_index(inplace=True)
-        atlas_df.rename(columns={'NY.GNP.PCAP.PP.CD': 'atlas'}, inplace=True)
-        atlas_df['atlas'] = atlas_df['atlas'].astype(float)
+        atlas_df = pl.from_pandas(pd.DataFrame(wb.get_series('NY.GNP.PCAP.PP.CD', country='PR', simplify_index=True).reset_index()))
+        atlas_df = atlas_df.rename({"NY.GNP.PCAP.PP.CD": "atlas"}).drop_nulls()
+        atlas_df = atlas_df.with_columns(
+            pl.col("Year").cast(pl.Int64),
+            pl.col("atlas").cast(pl.Int64))
 
         # get gni constant df from WB
-        gni_df = pd.DataFrame(wb.get_series('NY.GNP.PCAP.PP.KD', country='PR', simplify_index=True))
-        gni_df.reset_index(inplace=True)
-        gni_df.rename(columns={'NY.GNP.PCAP.PP.KD': 'gni'}, inplace=True)
-        gni_df['gni'] = gni_df['gni'].astype(float)
-        # replace value 20
+        gni_df = pl.from_pandas(pd.DataFrame(wb.get_series('NY.GNP.PCAP.PP.KD', country='PR', simplify_index=True).reset_index()))
+        gni_df = gni_df.rename({'NY.GNP.PCAP.PP.KD': 'gni'})
+        gni_df = gni_df.with_columns(pl.col("Year").cast(pl.Int64))
 
-        # ajust the index
-        ajusted_df = pd.DataFrame([], columns=['Year', 'coef', 'atkinson'])
+        # adjust the income index
+        adjusted_df = pl.DataFrame({"Year": [1],"coef": [1.1],"atkinson": [1.1],}).clear()
+
         for file in os.listdir('data/raw/'):
             if file.startswith('data_hpr'):
-                ajust_df = pd.read_csv('data/raw/' + file, engine="pyarrow")
-                ajust_df = ajust_df['HINCP'] # use HINCS
-                ajust_df = ajust_df.sort_values(ascending=True)
-                ajust_df = ajust_df[ajust_df > 0]
-                ajust_df = ajust_df.dropna()
-                bottom_5 = ajust_df[ajust_df <= ajust_df.quantile(0.005)]
-                bottom_max = bottom_5.max()
-                # replace bottom 5% with the max value
-                ajust_df = ajust_df.apply(lambda x: x if x > bottom_max else bottom_max)
-                # remove top 0.5%
-                ajust_df = ajust_df[ajust_df <= ajust_df.quantile(0.995)]
-                ajust_df = ajust_df.dropna()
-                # get coefficient of ajustment
-                coef, amean, gemetric, atkinson = self.adjust(ajust_df)
-                ajusted_df = pd.concat([ajusted_df if not ajusted_df.empty else None,
-                                        pd.DataFrame([[int(file.split('_')[2]), coef, atkinson]], 
-                                                        columns=['Year', 'coef', 'atkinson'])])
-            else:
-                continue
+                adjust_df = pl.read_csv("data/raw/data_hpr_2012_raw.csv")
+                adjust_df = adjust_df.select(pl.col("HINCP").drop_nulls())
+                adjust_df = adjust_df.sort("HINCP")
+                adjust_df = adjust_df.filter(pl.col("HINCP") > 0)
+
+                # replace bottom 0.5% 
+                bottom_max = adjust_df.select(pl.col("HINCP").quantile(0.005))
+                adjust_df = adjust_df.select(
+                    pl.when(pl.col("HINCP") < bottom_max)
+                    .then(bottom_max)
+                    .otherwise(pl.col("HINCP")).alias("HINCP"))
+
+                # drop top 0.5%
+                adjust_df = adjust_df.filter(
+                    pl.col("HINCP") <= pl.col("HINCP").quantile(0.995))
+
+                # get coefficient of adjustmet
+                coef, amean, gemetric, atkinson = adjust(adjust_df)
+                tmp_df = pl.DataFrame({
+                    "Year": int(file.split('_')[2]),
+                    "coef": coef[0][0],
+                    "atkinson": atkinson[0][0]})
+
+                adjusted_df = pl.concat([adjusted_df, tmp_df], how="vertical")
+        
         # merge the two dataframes
-        inc_df = atlas_df.merge(gni_df, on='Year')
-        inc_df['income_ratio'] = inc_df['gni'] / inc_df['atlas']
-        inc_df['income_ratio'] = inc_df['income_ratio'].astype(float)
-        inc_df['Year'] = inc_df['Year'].astype(int)
+        inc_df = atlas_df.join(gni_df, on='Year')
+        inc_df = inc_df.with_columns(
+            (pl.col("gni") / pl.col("atlas")).alias("income_ratio"))
 
         # merge the income index with the pnb.csv file
-        pnb = pd.read_csv('data/external/pnb.csv')
-        merge_df = inc_df.merge(pnb, on='Year', how='left')
-        merge_df = merge_df.dropna()
-        merge_df.reset_index(inplace=True)
-        merge_df.drop(['index'], axis=1, inplace=True)
+        pnb = pl.read_csv('data/external/pnb.csv')
+        merge_df = inc_df.join(pnb, on='Year', how='left').drop_nulls()
+        merge_df = merge_df.join(adjusted_df, on='Year', how='left')
         
         # calculate the index
-        #merge_df['index_temp'] =  merge_df['pnb']
-        # replace the value of the year 2021 with 0
-        # merge_df.loc[merge_df['Year'] == 2021, 'index_temp'] = 22342.18055
-        merge_df['index'] = (np.log(merge_df['pnb']) - np.log(100)) / (np.log(75000)-np.log(100))
-        merge_df = merge_df[['Year', 'index']]
-        merge_df = merge_df.sort_values(by='Year', ascending=True)
-        merge_df = merge_df.merge(ajusted_df, on='Year', how='left')
-        merge_df['income_index_ajusted'] = merge_df['coef'] * merge_df['index']
-        merge_df.drop(['coef'], axis=1, inplace=True)
-        # growth rate for income index and adjusted income index
-        merge_df['growth_rate_income_index'] = merge_df['index'].pct_change() * 100
-        merge_df['growth_rate_income_index_ajusted'] = merge_df['income_index_ajusted'].pct_change() * 100
+        merge_df =  merge_df.with_columns(
+            ((np.log(pl.col('pnb')) - np.log(100)) / (np.log(75000)-np.log(100))).alias('index'))
+        merge_df = merge_df.with_columns(
+            (pl.col("index") * pl.col("coef")).alias("income_index_ajusted"))
+        merge_df = merge_df.select(pl.col("Year", "index", "income_index_ajusted")).drop_nulls()
 
         if debug:
             return merge_df
         else:
             # round to 2 decimals
             # merge_df = merge_df.round(2)
-            merge_df.to_csv('data/processed/income_index.csv', index=False)
+            merge_df.write_csv('data/processed/income_index.csv')
     
     def edu_index(self, folder_path='data/raw/', debug=False):
         """
