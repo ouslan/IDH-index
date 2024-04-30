@@ -34,7 +34,7 @@ def main():
         elif main_sel == 1:
             if os.path.isfile("data/processed/idh_index.csv"):
                 df = pd.read_csv("data/processed/idh_index.csv")
-                df = df[['Year','health_index','health_index_ajusted']]
+                df = df[['Year','health_index','health_index_adjusted']]
                 table = Table(show_header=True, title="Health Index")
                 table.add_column("Year")
                 table.add_column("Health Index")
@@ -110,7 +110,7 @@ def main():
         elif main_sel == 6:
             if os.path.isfile("data/processed/idh_index.csv"):
                 G = Graphs("data/processed/idh_index.csv")
-                G.plot_graph('Year', 'index_ajusted', 'health_index_ajusted', 'income_index_ajusted', 'edu_index_ajusted', 'IDH Index Ajusted')
+                G.plot_graph('Year', 'index_ajusted', 'health_index_adjusted', 'income_index_ajusted', 'edu_index_ajusted', 'IDH Index Ajusted')
 
         elif main_sel == 7 or main_sel == None:
             main_menu_exit = True
