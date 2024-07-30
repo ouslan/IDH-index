@@ -5,7 +5,13 @@ from scipy.stats import gmean
 import world_bank_data as wb
 import os
 
-class IndexIDH:
+class DataProcess:
+
+    def __init__(self) -> None:
+        self.health_index()
+        self.income_index()
+        self.edu_index()
+        self.idh_index()
 
     def health_index(self, debug=False):
         """
@@ -35,7 +41,6 @@ class IndexIDH:
             (pl.col("health_index").pct_change() * 100).alias("health_index_pct_change"),
             (pl.col("health_index_adjusted").pct_change() * 100).alias("health_index_adjusted_pct_change")
             )
-        df
         
         if debug:
             return df
@@ -269,6 +274,5 @@ class IndexIDH:
         return mapping.get(x, 0) if x <= 21 else 18
     
 if __name__ == "__main__":
-    # # generate csv file for 2009-2020 for the education index
-    idh = IndexIDH()
-    print(idh.health_index(2019))
+    # generate csv file for 2009-2020 for the education index
+    DataProcess()

@@ -1,15 +1,9 @@
-from src.data.fetch import download
-from src.visualization.visualize import Graphs
-import pandas as pd
-import numpy as np
-import os
-
-from simple_term_menu import TerminalMenu
-from rich.console import Console
-from rich.table import Table
-
+from src.data.data_pull import DataPull
+from src.data.data_process import DataProcess
 def main():
-    download(['2012','2022'])
+    DataPull(end_year=2022, debug=True)
+    DataProcess()
+
 
 if __name__ == "__main__":
     main()
