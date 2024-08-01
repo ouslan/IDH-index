@@ -53,7 +53,7 @@ idh.idh_index()
 The data retrieval module (`fetch.py`) fetches data from the following sources:
 
 - [World Bank](https://data.worldbank.org/): Health, Income, and Education Indicators
-- [Atlas](https://www.atlas-gdp.org/): GDP per Capita, GNI Constant
+- [GNI](NY.GNP.PCAP.PP.CD): GDP per Capita, GNI Constant
 - [Census](https://www2.census.gov/programs-surveys/acs/data/pums/): Population, Housing Units, and Income by Sex, Race, and Ethnicity for 5-Year
 - [Informe del Gobernador](https://jp.pr.gov/informe-economico-al-gobernador/): GDP for Puerto Rico
 
