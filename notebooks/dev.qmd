@@ -13,7 +13,8 @@ os.chdir("..")
 
 ```{python}
 import polars as pl
-
+import world_bank_data as wb
+import pandas as pd
 ```
 
 ```{python}

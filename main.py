@@ -1,9 +1,7 @@
-from src.data.data_pull import DataPull
 from src.data.data_process import DataProcess
-def main():
-    DataPull(end_year=2023, debug=True)
-    DataProcess()
 
+def main():
+    DataProcess(end_year=2023, debug=True)
 
 if __name__ == "__main__":
     main()

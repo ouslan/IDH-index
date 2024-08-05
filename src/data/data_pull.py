@@ -7,7 +7,7 @@ import os
 
 class DataPull:
 
-    def __init__(self, end_year:int=2022, debug:bool=False):
+    def __init__(self, end_year:int, debug:bool=False):
         self.debug = debug
         self.pull_data(data_path='csv_ppr.zip', end_year=end_year)
         self.pull_data(data_path='csv_hpr.zip', end_year=end_year)
@@ -90,4 +90,4 @@ class DataPull:
                 print("\033[0;36mNOTICE: \033[0m" + f"File for life expectancy data already exists")
 
 if __name__ == '__main__':
-    DataPull()
+    DataPull(end_year=2023, debug=True)
