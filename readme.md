@@ -12,6 +12,8 @@ cd IDH-index
 conda env create -f environment.yml
 conda env activate research_env
 ```
+> [!IMPORTANT]  
+> This project uses pola.rs as une of its dependencies. This libary requires Rust to be installed on your system. You can install Rust from the [official Rust website](https://www.rust-lang.org/)
 
 This will create a new conda environment with the required libraries.
 
