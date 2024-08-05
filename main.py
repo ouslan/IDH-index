@@ -1,7 +1,7 @@
 from src.data.data_pull import DataPull
 from src.data.data_process import DataProcess
 def main():
-    # DataPull(end_year=2022, debug=True)
+    DataPull(end_year=2023, debug=True)
     DataProcess()
 
 

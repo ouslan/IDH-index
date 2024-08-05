@@ -78,9 +78,9 @@ class DataPull:
     def life_exp(self) -> None:
         
         if not os.path.exists('data/raw/life_exp.parquet'):
-            life_exp = pd.DataFrame(wb.get_series('SP.DYN.LE00.IN', country='PR', simplify_index=True))
-            life_exp = pl.from_pandas(life_exp)    
-            life_exp = life_exp.rename({"SP.DYN.LE00.IN":"life_exp"})
+            life_exp = pl.from_pandas(pd.DataFrame(wb.get_series('SP.DYN.LE00.IN', country='PR', simplify_index=True).reset_index()))   
+            life_exp = life_exp.rename({"SP.DYN.LE00.IN":"life_exp", "Year":"year"})
+            life_exp = life_exp.with_columns(pl.col("year").cast(pl.Int64))
             life_exp.write_parquet('data/raw/life_exp.parquet')
             
             if self.debug:
