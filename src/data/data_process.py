@@ -8,14 +8,14 @@ import os
 
 class DataProcess(DataPull):
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, end_year:int, file_remove:bool=False, debug:bool=False) -> None:
+        super().__init__(end_year=end_year, debug=debug)
         self.health_index()
         self.income_index()
         self.edu_index()
         self.idh_index()
 
-    def health_index(self, debug=False):
+    def health_index(self):
 
         df = pl.read_parquet('data/raw/life_exp.parquet')
         df = df.fill_null(strategy="forward")
@@ -30,12 +30,10 @@ class DataProcess(DataPull):
             (pl.col("health_index_adjusted").pct_change() * 100).alias("health_index_adjusted_pct_change")
             )
         
-        if debug:
-            return df
-        else:
-            # round to 2 decimal places
-            # pr_health = pr_health.round(2)
-            df.write_csv('data/processed/health_index.csv')
+        df.write_csv('data/processed/health_index.csv')
+
+        if self.debug:
+            print("\033[0;32mINFO: \033[0m" + "health_index" + " data is processed")
 
     def income_index(self, debug=False):
 
@@ -44,7 +42,7 @@ class DataProcess(DataPull):
                  pl.Series("year", [], dtype=pl.Int64), 
                  pl.Series("coef", [], dtype=pl.Float64),
                  pl.Series("atkinson", [], dtype=pl.Float64)
-        ]
+                ]
         adjusted_df = pl.DataFrame(empty)
         capita_df = pl.read_parquet("data/raw/gni_capita.parquet")
         constant_df = pl.read_parquet("data/raw/gni_constant.parquet")
@@ -93,12 +91,10 @@ class DataProcess(DataPull):
             (pl.col("index") * pl.col("coef")).alias("income_index_ajusted"))
         merge_df = merge_df.select(pl.col("year", "index", "income_index_ajusted")).drop_nulls()
         
-        if debug:
-            return merge_df
-        else:
-            # round to 2 decimals
-            # merge_df = merge_df.round(2)
-            merge_df.write_csv('data/processed/income_index.csv')
+        merge_df.write_csv('data/processed/income_index.csv')
+
+        if self.debug:
+            print("\033[0;32mINFO: \033[0m" + "income_index" + " data is processed")
     
     def edu_index(self, folder_path='data/raw/', debug=False):
 
@@ -145,12 +141,11 @@ class DataProcess(DataPull):
         # growth rate for edu index & edu index ajusted
         edu_index['growth_rate'] = edu_index['edu_index'].pct_change() * 100
         edu_index['growth_rate_ajusted'] = edu_index['edu_index_ajusted'].pct_change() * 100
-        if debug:
-            return edu_index    
-        else:
-            # round to 2 decimals
-            # edu_index = edu_index.round(2)
-            edu_index.to_csv('data/processed/edu_index.csv', index=False)
+
+        edu_index.to_csv('data/processed/edu_index.csv', index=False)
+
+        if self.debug:
+            print("\033[0;32mINFO: \033[0m" + "edu_index" + " data is processed")
  
     def idh_index(self, debug=False):
 
@@ -174,12 +169,11 @@ class DataProcess(DataPull):
         #  groth rate for idh index & idh index ajusted
         df['growth_rate'] = df['index'].pct_change() * 100
         df['growth_rate_ajusted'] = df['index_ajusted'].pct_change() * 100
-        if debug:
-            return df
-        else:
-            # round to 2 decimals
-            # df = df.round(2)
-            df.to_csv('data/processed/idh_index.csv', index=False)
+        
+        df.to_csv('data/processed/idh_index.csv', index=False)
+
+        if self.debug:
+            print("\033[0;32mINFO: \033[0m" + "idh_index" + " data is processed")
 
     def adjust(self, df):
         
@@ -197,6 +191,13 @@ class DataProcess(DataPull):
         }
         return mapping.get(x, 0) if x <= 21 else 18
     
+    def remove_data(self):
+        for file in os.listdir("data/raw/"):
+            if file.endswith(".csv") or file.endswith(".parquet"):
+                os.remove("data/raw/" + file)
+        for file in os.listdir("data/processed/"):
+            if file.endswith(".csv") and not file.startswith('idh_index'):
+                os.remove("data/processed/" + file)
+
 if __name__ == "__main__":
-    # generate csv file for 2009-2020 for the education index
-    DataProcess()
+    DataProcess(end_year=2023, debug=True)

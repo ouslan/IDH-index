@@ -1,8 +1,9 @@
 from dash import Dash, html, dcc, dash_table, Input, Output, State
-import pandas as pd
+from src.data.data_process import DataProcess
 import plotly.express as px
-import io
-import base64
+import pandas as pd
+
+DataProcess(end_year=2023, debug=True)
 
 # Data initialization
 df = pd.read_csv('data/processed/idh_index.csv')
@@ -76,9 +77,9 @@ def render_content(tab):
 def download_data(n_clicks):
     if n_clicks:
         # Convert DataFrame to CSV
-        csv_string = df.to_csv(index=False, sep='\t')  # Use tab separator for text file
+        csv_string = df.to_csv(index=False)  # Use tab separator for text file
         return dict(content=csv_string, filename="idh_index_data.csv")
 
 # Run the app
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=False, host="0.0.0.0", port=7050)
