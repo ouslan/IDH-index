@@ -16,6 +16,7 @@ class DataPull:
         self.life_exp()
 
     def pull_data(self, data_path:str, end_year:int) -> None:
+             
         for year in range(2012, end_year + 1):
             if os.path.exists(f'data/raw/data_{data_path[4:7]}_{year}_raw.csv'):
                 continue
@@ -73,8 +74,6 @@ class DataPull:
         else:
             if self.debug:
                 print("\033[0;36mNOTICE: \033[0m" + f"File for GNI constant data already exists")
-
-
 
     def life_exp(self) -> None:
         

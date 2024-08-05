@@ -1,38 +1,26 @@
+from src.data.data_pull import DataPull
+from scipy.stats import gmean
+import world_bank_data as wb
 import pandas as pd
 import polars as pl
 import numpy as np
-from scipy.stats import gmean
-import world_bank_data as wb
 import os
 
-class DataProcess:
+class DataProcess(DataPull):
 
     def __init__(self) -> None:
+        super().__init__()
         self.health_index()
         self.income_index()
         self.edu_index()
         self.idh_index()
 
     def health_index(self, debug=False):
-        """
-        Calculate the health index for PR
 
-        Parameters
-        ----------
-        debug : <bool>, optional
-            If True, returns the dataframe of the health index and does not save to csv. The default is False.
-        
-        Returns
-        -------
-        pd.DataFrame
-            The dataframe of the health index.
-        """
-        df = pd.DataFrame(wb.get_series('SP.DYN.LE00.IN', country='PR', simplify_index=True))
-        df = pl.from_pandas(df.reset_index())
-        
-        df = df.rename({"SP.DYN.LE00.IN":"life_exp"}).fill_null(strategy="forward")
+        df = pl.read_parquet('data/raw/life_exp.parquet')
+        df = df.fill_null(strategy="forward")
         df = df.with_columns(
-            pl.col("Year").cast(pl.Int64),
+            pl.col("year").cast(pl.Int64),
             ((pl.col("life_exp") - 20) / (85-20)).alias("health_index"),
             (((pl.col("life_exp") - 20) / (85-20)) * (1-0.08)).alias("health_index_adjusted"),
             arkinson=0.08
@@ -50,34 +38,14 @@ class DataProcess:
             df.write_csv('data/processed/health_index.csv')
 
     def income_index(self, debug=False):
-        """
-        Calculate the income index for PR
-
-        Parameters
-        ----------
-        debug : <bool>, optional
-            If True, returns the dataframe of the income index and does not save to csv. The default is False.
-        
-        Returns
-        -------
-        pd.DataFrame
-            The dataframe of the income index.
-        """
-        
-        # get atlas df from WB (change names)
-        atlas_df = pl.from_pandas(pd.DataFrame(wb.get_series('NY.GNP.PCAP.PP.CD', country='PR', simplify_index=True).reset_index()))
-        atlas_df = atlas_df.rename({"NY.GNP.PCAP.PP.CD": "atlas"}).drop_nulls()
-        atlas_df = atlas_df.with_columns(
-            pl.col("Year").cast(pl.Int64),
-            pl.col("atlas").cast(pl.Int64))
-
-        # get gni constant df from WB
-        gni_df = pl.from_pandas(pd.DataFrame(wb.get_series('NY.GNP.PCAP.PP.KD', country='PR', simplify_index=True).reset_index()))
-        gni_df = gni_df.rename({'NY.GNP.PCAP.PP.KD': 'gni'})
-        gni_df = gni_df.with_columns(pl.col("Year").cast(pl.Int64))
 
         # adjust the income index
-        adjusted_df = pl.DataFrame({"Year": [1],"coef": [1.1],"atkinson": [1.1],}).clear()
+        empty = [
+                 pl.Series("year", [], dtype=pl.Int64), 
+                 pl.Series("coef", [], dtype=pl.Float64),
+                 pl.Series("atkinson", [], dtype=pl.Float64)
+        ]
+        adjusted_df = pl.DataFrame(empty)
 
         for file in os.listdir('data/raw/'):
             if file.startswith('data_hpr'):
@@ -90,8 +58,8 @@ class DataProcess:
                 bottom_max = adjust_df.select(pl.col("HINCP").quantile(0.005))
                 adjust_df = adjust_df.select(
                     pl.when(pl.col("HINCP") < bottom_max)
-                    .then(bottom_max)
-                    .otherwise(pl.col("HINCP")).alias("HINCP"))
+                      .then(bottom_max)
+                      .otherwise(pl.col("HINCP")).alias("HINCP"))
 
                 # drop top 0.5%
                 adjust_df = adjust_df.filter(
@@ -131,21 +99,6 @@ class DataProcess:
             merge_df.write_csv('data/processed/income_index.csv')
     
     def edu_index(self, folder_path='data/raw/', debug=False):
-        """
-        Calculate the edu index
-
-        Parameters
-        ----------
-        folder_path : <str>
-            path to the folder where the data is stored. Assumes the data is formatted as data_ppr_YYYY.csv
-        debug : <bool>, optional
-            debug mode, if True, the function will return the dataframe with the index. The default is False.
-
-        Returns
-        -------
-        pd.DataFrame
-            dataframe with the index of the edu index
-        """
 
         # create the dataframe and loop through the files
         edu_index = pd.DataFrame([],columns=['Year', 'edu_index', 'edu_index_ajusted'])
@@ -198,19 +151,6 @@ class DataProcess:
             edu_index.to_csv('data/processed/edu_index.csv', index=False)
  
     def idh_index(self, debug=False):
-        """
-        Calculate the idh index
-
-        Parameters
-        ----------
-        debug : <bool>, optional
-            debug mode, if True, the function will return the dataframe with the index. The default is False.
-
-        Returns
-        -------
-        pd.DataFrame
-            dataframe with the index of the idh index
-        """
 
         # get & calculate the health index
         health = pd.read_csv('data/processed/health_index.csv')
@@ -240,25 +180,7 @@ class DataProcess:
             df.to_csv('data/processed/idh_index.csv', index=False)
 
     def adjust(self, df):
-        """
-        Function for calculating the adjustment coefficient using the atkinson's method
-
-        Parameters
-        ----------
-        df : <pd.DataFrame>
-            dataframe with the index of the idh index
-
-        Returns
-        -------
-        <float>
-            coefficient of the adjustment
-        <float>
-            mean of the index
-        <float>
-            geometric mean of the index
-        <float>
-            atkinson's coefficient of the index
-        """
+        
         gemetric = gmean(df)
         amean = df.mean()
         atkinson = 1 - gemetric/amean
