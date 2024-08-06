@@ -5,9 +5,7 @@ services:
       context: .
       dockerfile: ./Dockerfile
     ports: 
-      - 7050:7050
-    environment:
-      - APP_ENV=production
+      - 7051:7050
 
   mkdocs:
     image: squidfunk/mkdocs-material

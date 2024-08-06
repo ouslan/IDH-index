@@ -3,7 +3,7 @@ from src.data.data_process import DataProcess
 import plotly.express as px
 import pandas as pd
 
-DataProcess(end_year=2023, debug=True)
+DataProcess(end_year=2023, file_remove=True, debug=True)
 
 # Data initialization
 df = pd.read_csv('data/processed/idh_index.csv')
