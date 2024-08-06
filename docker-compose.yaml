@@ -11,7 +11,7 @@ services:
 
   mkdocs:
     image: squidfunk/mkdocs-material
-    container_name: web-docs
+    container_name: idh-docs
     restart: always
     ports:
       - "8005:8000"
