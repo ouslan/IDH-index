@@ -1,4 +1,5 @@
 from urllib.request import urlretrieve
+from urllib.error import URLError
 import world_bank_data as wb
 import pandas as pd
 import polars as pl
@@ -6,8 +7,28 @@ import zipfile
 import os
 
 class DataPull:
+    """
+    A class to pull and process data from various sources and save it to local files.
 
-    def __init__(self, end_year:int, debug:bool=False):
+    Parameters
+    ----------
+    end_year : int
+        The end year for data collection.
+    debug : bool, optional
+        If True, enables debug messages. The default is False.
+    """
+
+    def __init__(self, end_year: int, debug: bool = False):
+        """
+        Initializes the DataPull instance and pulls data for specified years.
+
+        Parameters
+        ----------
+        end_year : int
+            The end year for data collection.
+        debug : bool, optional
+            If True, enables debug messages. The default is False.
+        """
         self.debug = debug
         self.pull_data(data_path='csv_ppr.zip', end_year=end_year)
         self.pull_data(data_path='csv_hpr.zip', end_year=end_year)
@@ -15,45 +36,65 @@ class DataPull:
         self.pull_gni_constant()
         self.life_exp()
 
-    def pull_data(self, data_path:str, end_year:int) -> None:
-             
+    def pull_data(self, data_path: str, end_year: int) -> None:
+        """
+        Downloads and extracts data files from a specified URL for a range of years.
+
+        Parameters
+        ----------
+        data_path : str
+            The path to the zip file on the server.
+        end_year : int
+            The end year for data collection.
+
+        Returns
+        -------
+        None
+        """
         for year in range(2012, end_year + 1):
-            if os.path.exists(f'data/raw/data_{data_path[4:7]}_{year}_raw.csv'):
+            csv_file_path = f'data/raw/data_{data_path[4:7]}_{year}_raw.csv'
+            if os.path.exists(csv_file_path):
                 continue
-            else:
-                url = f'https://www2.census.gov/programs-surveys/acs/data/pums/{year}/5-Year/{data_path}'
-                file_name = f'data/raw/raw_ppr_{year}.zip'
+            url = f'https://www2.census.gov/programs-surveys/acs/data/pums/{year}/5-Year/{data_path}'
+            file_name = f'data/raw/raw_ppr_{year}.zip'
             try:
                 urlretrieve(url, file_name)
-            except:
+            except URLError:
                 print("\033[0;31mERROR: \033[0m" + f"Could not download {year} data")
                 continue
             if self.debug:
                 print("\033[0;36mINFO: \033[0m" + f"Downloading {year} data")
 
-            # unzip the file
+            # Unzip the file
             with zipfile.ZipFile(file_name, 'r') as zip_ref:
                 zip_ref.extractall('data/raw/')
 
-            # remove the zip file and pdf
+            # Remove the zip file and pdf
             for file in os.listdir('data/raw/'):
-                if file.endswith('.pdf'):
-                    os.remove(f'data/raw/{file}')
-                elif file.endswith('.zip'):
+                if file.endswith('.pdf') or file.endswith('.zip'):
                     os.remove(f'data/raw/{file}')
                 elif file.endswith('.csv') and not file.startswith('data'):
-                    os.rename(f'data/raw/{file}', f'data/raw/data_{data_path[4:7]}_{year}_raw.csv')
+                    os.rename(f'data/raw/{file}', csv_file_path)
                 else:
                     continue
 
     def pull_gni_capita(self) -> None:
-        
+        """
+        Downloads and processes GNI per capita data and saves it as a Parquet file.
+
+        Returns
+        -------
+        None
+        """
         if not os.path.exists('data/raw/gni_capita.parquet'):
-            capita_df = pl.from_pandas(pd.DataFrame(wb.get_series('NY.GNP.PCAP.PP.CD', country='PR', simplify_index=True).reset_index()))
-            capita_df = capita_df.rename({"NY.GNP.PCAP.PP.CD": "capita", "Year":"year"}).drop_nulls()
+            capita_df = pl.from_pandas(
+                pd.DataFrame(wb.get_series('NY.GNP.PCAP.PP.CD', country='PR', simplify_index=True).reset_index())
+            )
+            capita_df = capita_df.rename({"NY.GNP.PCAP.PP.CD": "capita", "Year": "year"}).drop_nulls()
             capita_df = capita_df.with_columns(
-                                               pl.col("year").cast(pl.Int64),
-                                               pl.col("capita").cast(pl.Int64))
+                pl.col("year").cast(pl.Int64),
+                pl.col("capita").cast(pl.Int64)
+            )
             capita_df.write_parquet('data/raw/gni_capita.parquet')
             if self.debug:
                 print("\033[0;32mINFO: \033[0m" + f"GNI capita data downloaded")
@@ -62,10 +103,18 @@ class DataPull:
                 print("\033[0;36mNOTICE: \033[0m" + f"File for GNI capita data already exists")
 
     def pull_gni_constant(self) -> None:
+        """
+        Downloads and processes GNI constant data and saves it as a Parquet file.
 
+        Returns
+        -------
+        None
+        """
         if not os.path.exists('data/raw/gni_constant.parquet'):
-            constant_df = pl.from_pandas(pd.DataFrame(wb.get_series('NY.GNP.PCAP.PP.KD', country='PR', simplify_index=True).reset_index()))
-            constant_df = constant_df.rename({'NY.GNP.PCAP.PP.KD': 'constant', "Year":"year"})
+            constant_df = pl.from_pandas(
+                pd.DataFrame(wb.get_series('NY.GNP.PCAP.PP.KD', country='PR', simplify_index=True).reset_index())
+            )
+            constant_df = constant_df.rename({'NY.GNP.PCAP.PP.KD': 'constant', "Year": "year"})
             constant_df = constant_df.with_columns(pl.col("year").cast(pl.Int64))
 
             constant_df.write_parquet('data/raw/gni_constant.parquet')
@@ -76,13 +125,21 @@ class DataPull:
                 print("\033[0;36mNOTICE: \033[0m" + f"File for GNI constant data already exists")
 
     def life_exp(self) -> None:
-        
+        """
+        Downloads and processes life expectancy data and saves it as a Parquet file.
+
+        Returns
+        -------
+        None
+        """
         if not os.path.exists('data/raw/life_exp.parquet'):
-            life_exp = pl.from_pandas(pd.DataFrame(wb.get_series('SP.DYN.LE00.IN', country='PR', simplify_index=True).reset_index()))   
-            life_exp = life_exp.rename({"SP.DYN.LE00.IN":"life_exp", "Year":"year"})
+            life_exp = pl.from_pandas(
+                pd.DataFrame(wb.get_series('SP.DYN.LE00.IN', country='PR', simplify_index=True).reset_index())
+            )
+            life_exp = life_exp.rename({"SP.DYN.LE00.IN": "life_exp", "Year": "year"})
             life_exp = life_exp.with_columns(pl.col("year").cast(pl.Int64))
             life_exp.write_parquet('data/raw/life_exp.parquet')
-            
+
             if self.debug:
                 print("\033[0;32mINFO: \033[0m" + f"Life expectancy data downloaded")
         else:

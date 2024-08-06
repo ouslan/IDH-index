@@ -64,7 +64,7 @@ def render_content(tab):
         return html.Div([
             dcc.Graph(
                 id='idh-adj-graph',
-                figure=px.line(df, x='year', y=["index_ajusted", "income_index_ajusted", "edu_index_ajusted", "health_index_adjusted"], title='Human Development Index', range_y=[0, 1]),
+                figure=px.line(df, x='year', y=["index_adjusted", "income_index_adjusted", "edu_index_adjusted", "health_index_adjusted"], title='Human Development Index', range_y=[0, 1]),
                 style={'width': '100%', 'height': '80vh'}
             )
         ], style={'padding': '10px'})
