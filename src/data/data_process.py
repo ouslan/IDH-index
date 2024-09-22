@@ -20,7 +20,7 @@ class DataProcess(DataPull):
         If True, enables debug messages. The default is False.
     """
 
-    def __init__(self, end_year: int, file_remove: bool = False, debug: bool = False) -> None:
+    def __init__(self, end_year: int, save_path:str, file_remove: bool = False, debug: bool = False) -> None:
         """
         Initializes the DataProcess instance and processes the data for specified years.
 
@@ -38,6 +38,7 @@ class DataProcess(DataPull):
         self.income_index()
         self.edu_index()
         self.idh_index()
+        self.save_path = save_path
         if file_remove:
             self.remove_data()
 
@@ -165,7 +166,7 @@ class DataProcess(DataPull):
             if file.startswith('data_ppr'):
                 df = pd.read_csv(folder_path + file, engine="pyarrow")
                 df = df[['AGEP', 'SCH', 'SCHL']]
-                
+
                 # Calculate the mean of years of schooling
                 edu_sch = df[df['AGEP'] >= 25].copy()
                 edu_sch['schooling'] = edu_sch['SCHL']
@@ -231,7 +232,7 @@ class DataProcess(DataPull):
         edu = pd.read_csv('data/processed/edu_index.csv')
         edu.rename(columns={'index': 'edu_index'}, inplace=True)
         edu = edu[['year', 'edu_index', 'edu_index_adjusted']]
-        
+
         # Calculate the index & save in CSV
         df = health.merge(income, on='year', how='left')
         df = df.merge(edu, on='year', how='left')
@@ -241,7 +242,7 @@ class DataProcess(DataPull):
         # Growth rate for HDI index & HDI index adjusted
         df['growth_rate'] = df['index'].pct_change() * 100
         df['growth_rate_adjusted'] = df['index_adjusted'].pct_change() * 100
-        
+
         df.to_csv('data/processed/idh_index.csv', index=False)
 
         if self.debug:
@@ -301,6 +302,3 @@ class DataProcess(DataPull):
         for file in os.listdir("data/processed/"):
             if file.endswith(".csv") and not file.startswith('idh_index'):
                 os.remove("data/processed/" + file)
-
-if __name__ == "__main__":
-    DataProcess(end_year=2023, debug=True)
