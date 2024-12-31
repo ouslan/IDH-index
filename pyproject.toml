@@ -1,38 +1,11 @@
-[build-system]
-requires = ["setuptools >= 61.0"]
-build-backend = "setuptools.build_meta"
-
 [project]
-name = "IDH-index"
-version = "1.0"
-dependencies = [
-    "numpy~=1.26.4",
-    "pandas~=2.1.4",
-    "pyarrow~=17.0.0",
-    "scipy~=1.11.4",
-    "polars~=0.20.21",
-    "world_bank_data~=0.1.3",
-    "mkdocstrings[python]>=0.18",
-]
-requires-python = ">=3.8"
-authors = [
-  {name = "Alejandro Ouslan", email = "alejandro.ouslan@upr.edu"},
-]
-maintainers = []
-description = "Human development index (HDI) index replication pkg for PR"
+name = "idh-index"
+version = "0.1.0"
+description = "Add your description here"
 readme = "README.md"
-license = {file = "LICENSE"}
-keywords = []
-classifiers = [
-  "Development Status :: 4 - Beta",
-  "Programming Language :: Python"
+requires-python = ">=3.12"
+dependencies = [
+    "pandas>=2.2.3",
+    "polars>=1.18.0",
+    "world-bank-data>=0.1.4",
 ]
-
-[project.optional-dependencies]
-
-[project.urls]
-Repository = "https://github.com/ouslan/IDH-index"
-
-[project.scripts]
-
-[project.gui-scripts]
