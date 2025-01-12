@@ -9,6 +9,7 @@ dependencies = [
     "ibis-framework[sqlite]>=9.5.0",
     "pandas>=2.2.3",
     "polars>=1.18.0",
+    "psycopg2-binary>=2.9.10",
     "scipy>=1.15.1",
     "sqlmodel>=0.0.22",
     "tqdm>=4.67.1",

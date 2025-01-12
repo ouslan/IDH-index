@@ -24,19 +24,13 @@ print(df)
 ```
 
 ```{python}
-param = "AGEP,SCH,SCHL,PWGTP"
+param = "AGEP,SCH,SCHL,HINCP,PWGTP"
 base = "https://api.census.gov/data/"
 flow = "/acs/acs1/pumspr"
-year = "2021"
+year = "2022"
 url = f'{base}{year}{flow}?get={param}'
-print(url)
 r = requests.get(url).json()
 df = pl.DataFrame(r)
-df2 = df 
-print(df)
-```
-
-```{python}
 names = df.select(pl.col("column_0")).transpose()
 df = df.drop("column_0").transpose()
 df = df.rename(names.to_dicts().pop()).with_columns(year=pl.lit(year))
