@@ -5,7 +5,18 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "alembic>=1.14.0",
+    "ibis-framework[sqlite]>=9.5.0",
     "pandas>=2.2.3",
     "polars>=1.18.0",
+    "scipy>=1.15.1",
+    "sqlmodel>=0.0.22",
+    "tqdm>=4.67.1",
     "world-bank-data>=0.1.4",
+]
+
+[dependency-groups]
+dev = [
+    "jupyter>=1.1.1",
+    "pynvim>=0.5.2",
 ]

@@ -93,7 +93,7 @@ class DataProcess(DataPull):
 
         for file in os.listdir('data/raw/'):
             if file.startswith('data_hpr'):
-                adjust_df = pl.read_csv("data/raw/data_hpr_2012_raw.csv")
+                adjust_df = pl.read_csv(f"data/raw/{file}")
                 adjust_df = adjust_df.select(pl.col("HINCP").drop_nulls())
                 adjust_df = adjust_df.sort("HINCP")
                 adjust_df = adjust_df.filter(pl.col("HINCP") > 0)

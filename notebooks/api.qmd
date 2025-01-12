@@ -1,0 +1,44 @@
+---
+title: "API development"
+format:
+  html:
+    code-fold: true
+jupyter: python3
+---
+
+```{python}
+import os
+os.chdir("..")
+```
+
+```{python}
+from ibis import param
+import polars as pl
+import requests
+```
+
+```{python}
+df = pl.read_csv('data/raw/data_ppr_2022_raw.csv')
+df = df.select(['AGEP', 'SCH', 'SCHL','PWGTP'])
+print(df)
+```
+
+```{python}
+param = "AGEP,SCH,SCHL,PWGTP"
+base = "https://api.census.gov/data/"
+flow = "/acs/acs1/pumspr"
+year = "2021"
+url = f'{base}{year}{flow}?get={param}'
+print(url)
+r = requests.get(url).json()
+df = pl.DataFrame(r)
+df2 = df 
+print(df)
+```
+
+```{python}
+names = df.select(pl.col("column_0")).transpose()
+df = df.drop("column_0").transpose()
+df = df.rename(names.to_dicts().pop()).with_columns(year=pl.lit(year))
+print(df)
+```

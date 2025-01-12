@@ -1,9 +1,10 @@
-from urllib.request import urlretrieve
-from urllib.error import URLError
-import world_bank_data as wb
+from sqlmodel import create_engine
+from tqdm import tqdm
 import pandas as pd
 import polars as pl
+import requests
 import zipfile
+import ibis
 import os
 
 class DataPull:
@@ -18,7 +19,7 @@ class DataPull:
         If True, enables debug messages. The default is False.
     """
 
-    def __init__(self, database_url:str='sqlite:///db.sqlite', saving_dir:str='data/', 
+    def __init__(self, database_url:str='sqlite:///db.sqlite', saving_dir:str='data/',
                         update:bool=False, debug:bool=False, dev:bool=False) -> None:
         """
         Parameters
