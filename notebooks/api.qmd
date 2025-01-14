@@ -26,17 +26,19 @@ print(df)
 ```
 
 ```{python}
-param = "AGEP,SCH,SCHL,PWGTP"
+param = "AGEP,SCH,SCHL,PWGTP,HINCP"
 base = "https://api.census.gov/data/"
 flow = "/acs/acs1/pumspr"
-year = "2022"
+year = "2023"
 url = f'{base}{year}{flow}?get={param}'
 r = requests.get(url).json()
 df = pl.DataFrame(r)
 names = df.select(pl.col("column_0")).transpose()
-df = df.rename(names.to_dicts().pop()).with_columns(year=pl.lit(year))
-
-print(names)
+names = names.to_dicts().pop()
+names = dict((k, v.lower()) for k,v in names.items())
+df = df.drop("column_0").transpose()
+df = df.rename(names).with_columns(year=pl.lit(year)).cast(pl.Int64)
+df
 ```
 
 ```{python}
@@ -64,5 +66,6 @@ print(acs)
 
 ```{python}
 conn = ibis.sqlite.connect("db.sqlite")
-conn.table("pumspr").to_pandas().empty
+df = conn.table("pumstable").to_pandas()
+df
 ```

@@ -1,8 +1,8 @@
-"""added gnitable and rename
+"""initial migrations
 
-Revision ID: ea0855ed74dd
+Revision ID: 8ad69fa61d1f
 Revises: 
-Create Date: 2025-01-13 20:09:22.362701
+Create Date: 2025-01-14 10:46:14.156953
 
 """
 from typing import Sequence, Union
@@ -13,7 +13,7 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'ea0855ed74dd'
+revision: str = '8ad69fa61d1f'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -24,8 +24,8 @@ def upgrade() -> None:
     op.create_table('gnitable',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('year', sa.Integer(), nullable=False),
-    sa.Column('conts', sa.Float(), nullable=False),
-    sa.Column('capita', sa.Float(), nullable=False),
+    sa.Column('constant', sa.Float(), nullable=False),
+    sa.Column('capita', sa.Integer(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('pumstable',
@@ -34,7 +34,7 @@ def upgrade() -> None:
     sa.Column('agep', sa.Integer(), nullable=False),
     sa.Column('sch', sa.Integer(), nullable=False),
     sa.Column('schl', sa.Integer(), nullable=False),
-    sa.Column('hincp', sa.Integer(), nullable=True),
+    sa.Column('hincp', sa.Integer(), nullable=False),
     sa.Column('pwgtp', sa.Integer(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )

@@ -1,5 +1,6 @@
 from sqlmodel import create_engine
 from json import JSONDecodeError
+from datetime import datetime
 import world_bank_data as wb
 from tqdm import tqdm
 import pandas as pd
@@ -62,9 +63,9 @@ class DataPull:
     def pull_acs(self) -> ibis.expr.types.relations.Table:
         df = self.conn.table("pumstable")
         for _year in range(2012, 2024):
-            if df.filter(df.year == _year).to_pandas().empty:
+            if df.filter(df.year == _year).to_pandas().empty and _year != 2020:
                 try:
-                    self.conn.insert("pumstable", self.pull_request(params=['AGEP', 'SCH', 'SCHL','PWGTP'], year=_year))
+                    self.conn.insert("pumstable", self.pull_request(params=['AGEP', 'SCH', 'SCHL', 'HINCP', 'PWGTP'], year=_year))
                 except JSONDecodeError:
                     print("\033[0;36mNOTICE: \033[0m" + f"The ACS for {_year} is not availabel")
                     continue
@@ -85,51 +86,36 @@ class DataPull:
         df = df.drop("column_0").transpose()
         return df.rename(names).with_columns(year=pl.lit(year)).cast(pl.Int64)
 
-    def pull_gni_capita(self) -> None:
-        """
-        Downloads and processes GNI per capita data and saves it as a Parquet file.
+    def pull_wb(self) -> ibis.expr.types.relations.Table:
+        # Get the list of years in db
+        df = self.conn.table("gnitable")
+        list_year = df[["year"]].distinct().to_polars().to_numpy().transpose()[0]
 
-        Returns
-        -------
-        None
-        """
-        if not os.path.exists('data/raw/gni_capita.parquet'):
-            capita_df = pl.from_pandas(
-                pd.DataFrame(wb.get_series('NY.GNP.PCAP.PP.CD', country='PR', simplify_index=True).reset_index())
-            )
-            capita_df = capita_df.rename({"NY.GNP.PCAP.PP.CD": "capita", "Year": "year"}).drop_nulls()
-            capita_df = capita_df.with_columns(
-                pl.col("year").cast(pl.Int64),
-                pl.col("capita").cast(pl.Int64)
-            )
-            capita_df.write_parquet('data/raw/gni_capita.parquet')
-            if self.debug:
-                print("\033[0;32mINFO: \033[0m" + f"GNI capita data downloaded")
-        else:
-            if self.debug:
-                print("\033[0;36mNOTICE: \033[0m" + f"File for GNI capita data already exists")
+        # Pull data from the WB that are not in the database
+        for _year in range(2012, datetime.now().year):
+            if not _year in list_year:
+                capita_df = wb.get_series('NY.GNP.PCAP.PP.CD', country='PR', simplify_index=True, date="2028")
+                constant_df = wb.get_series('NY.GNP.PCAP.PP.KD', country='PR', simplify_index=True, date="2028")
 
-    def pull_gni_constant(self) -> None:
-        """
-        Downloads and processes GNI constant data and saves it as a Parquet file.
+                capita_df = pl.from_pandas(capita_df.reset_index())
+                constant_df = pl.from_pandas(constant_df.reset_index())
 
-        Returns
-        -------
-        None
-        """
-        if not os.path.exists('data/raw/gni_constant.parquet'):
-            constant_df = pl.from_pandas(
-                pd.DataFrame(wb.get_series('NY.GNP.PCAP.PP.KD', country='PR', simplify_index=True).reset_index())
-            )
-            constant_df = constant_df.rename({'NY.GNP.PCAP.PP.KD': 'constant', "Year": "year"})
-            constant_df = constant_df.with_columns(pl.col("year").cast(pl.Int64))
+                capita_df = capita_df.rename({"NY.GNP.PCAP.PP.CD": "capita", "Year": "year"})
+                constant_df = constant_df.rename({"NY.GNP.PCAP.PP.KD": "constant", "Year": "year"})
 
-            constant_df.write_parquet('data/raw/gni_constant.parquet')
-            if self.debug:
-                print("\033[0;32mINFO: \033[0m" + f"GNI constant data downloaded")
-        else:
-            if self.debug:
-                print("\033[0;36mNOTICE: \033[0m" + f"File for GNI constant data already exists")
+                capita_df = capita_df.with_columns(pl.col("year").cast(pl.Int64))
+                constant_df = constant_df.with_columns(pl.col("year").cast(pl.Int64))
+
+                df = capita_df.join(constant_df, on="year", how="inner", validate="1:1")
+                self.conn.insert("gnitable", df)
+
+                # Logging
+                self.debug_log(message=f"inserted wb data for {_year}")
+
+            else:
+                self.debug_log(message="Data is in the database")
+                continue
+        return self.conn.table("gnitable")
 
     def life_exp(self) -> None:
         """

@@ -1,0 +1,49 @@
+---
+title: "Graph development"
+format:
+  html:
+    code-fold: true
+jupyter: python3
+---
+
+
+```{python}
+import world_bank_data as wb
+import polars as pl
+import ibis
+
+ibis.options.interactive = True
+ibis.set_backend("sqlite")
+```
+
+```{python}
+conn = ibis.sqlite.connect("db.sqlite")
+```
+
+```{python}
+capita_df = wb.get_series('NY.GNP.PCAP.PP.CD', country='PR', simplify_index=True, date="2028")
+constant_df = wb.get_series('NY.GNP.PCAP.PP.KD', country='PR', simplify_index=True, date="2028")
+
+capita_df = pl.from_pandas(capita_df.reset_index())
+constant_df = pl.from_pandas(constant_df.reset_index())
+
+capita_df = capita_df.rename({"NY.GNP.PCAP.PP.CD": "capita", "Year": "year"})
+constant_df = constant_df.rename({"NY.GNP.PCAP.PP.KD": "constant", "Year": "year"})
+
+capita_df = capita_df.with_columns(pl.col("year").cast(pl.Int64))
+constant_df = constant_df.with_columns(pl.col("year").cast(pl.Int64))
+
+df = capita_df.join(constant_df, on="year", how="inner", validate="1:1")
+df
+```
+
+```{python}
+conn.insert("gnitable", df)
+```
+
+```{python}
+df = conn.table("gnitable")
+list_year = df[["year"]].distinct().to_polars().to_numpy().transpose()[0]
+if 2019 in list_year:
+  print("yeas")
+```
