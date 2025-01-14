@@ -5,7 +5,7 @@ from sqlalchemy import pool
 from sqlmodel import SQLModel
 from alembic import context
 
-from src.models import pumspr
+from src.models import PumsTable, GniTable
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

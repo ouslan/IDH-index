@@ -1,9 +1,10 @@
 from sqlmodel import create_engine
+from json import JSONDecodeError
+import world_bank_data as wb
 from tqdm import tqdm
 import pandas as pd
 import polars as pl
 import requests
-import zipfile
 import ibis
 import os
 
@@ -58,47 +59,31 @@ class DataPull:
         if not os.path.exists(self.saving_dir + "external"):
             os.makedirs(self.saving_dir + "external")
 
-    def pull_data(self, data_path: str, end_year: int) -> None:
-        """
-        Downloads and extracts data files from a specified URL for a range of years.
-
-        Parameters
-        ----------
-        data_path : str
-            The path to the zip file on the server.
-        end_year : int
-            The end year for data collection.
-
-        Returns
-        -------
-        None
-        """
-        for year in range(2012, end_year + 1):
-            csv_file_path = f'data/raw/data_{data_path[4:7]}_{year}_raw.csv'
-            if os.path.exists(csv_file_path):
-                continue
-            url = f'https://www2.census.gov/programs-surveys/acs/data/pums/{year}/5-Year/{data_path}'
-            file_name = f'data/raw/raw_ppr_{year}.zip'
-            try:
-                urlretrieve(url, file_name)
-            except URLError:
-                print("\033[0;31mERROR: \033[0m" + f"Could not download {year} data")
-                continue
-            if self.debug:
-                print("\033[0;36mINFO: \033[0m" + f"Downloading {year} data")
-
-            # Unzip the file
-            with zipfile.ZipFile(file_name, 'r') as zip_ref:
-                zip_ref.extractall('data/raw/')
-
-            # Remove the zip file and pdf
-            for file in os.listdir('data/raw/'):
-                if file.endswith('.pdf') or file.endswith('.zip'):
-                    os.remove(f'data/raw/{file}')
-                elif file.endswith('.csv') and not file.startswith('data'):
-                    os.rename(f'data/raw/{file}', csv_file_path)
-                else:
+    def pull_acs(self) -> ibis.expr.types.relations.Table:
+        df = self.conn.table("pumstable")
+        for _year in range(2012, 2024):
+            if df.filter(df.year == _year).to_pandas().empty:
+                try:
+                    self.conn.insert("pumstable", self.pull_request(params=['AGEP', 'SCH', 'SCHL','PWGTP'], year=_year))
+                except JSONDecodeError:
+                    print("\033[0;36mNOTICE: \033[0m" + f"The ACS for {_year} is not availabel")
                     continue
+            else:
+                continue
+        return self.conn.table("pumstable")
+
+    def pull_request(self, params:list, year:int) -> pl.DataFrame:
+        param = ",".join(params)
+        base = "https://api.census.gov/data/"
+        flow = "/acs/acs1/pumspr"
+        url = f'{base}{year}{flow}?get={param}'
+        r = requests.get(url).json()  
+        df = pl.DataFrame(r)
+        names = df.select(pl.col("column_0")).transpose()
+        names = names.to_dicts().pop()
+        names = dict((k, v.lower()) for k,v in names.items())
+        df = df.drop("column_0").transpose()
+        return df.rename(names).with_columns(year=pl.lit(year)).cast(pl.Int64)
 
     def pull_gni_capita(self) -> None:
         """
@@ -202,5 +187,3 @@ class DataPull:
         if self.debug:
             print(f"\033[0;36mINFO: \033[0m {message}")
 
-if __name__ == '__main__':
-    DataPull(end_year=2023, debug=True)
