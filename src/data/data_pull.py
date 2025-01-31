@@ -1,13 +1,15 @@
-from sqlmodel import create_engine
 from json import JSONDecodeError
+from ..models import init_pums_table
 from datetime import datetime
 import world_bank_data as wb
 from tqdm import tqdm
 import pandas as pd
 import polars as pl
+import logging
 import requests
 import ibis
 import os
+
 
 class DataPull:
     """
@@ -21,36 +23,22 @@ class DataPull:
         If True, enables debug messages. The default is False.
     """
 
-    def __init__(self, database_url:str='sqlite:///db.sqlite', saving_dir:str='data/',
-                        update:bool=False, debug:bool=False, dev:bool=False) -> None:
-        """
-        Parameters
-        ----------
-        saving_dir : str
-            The directory where the data will be saved.
-        Returns
-        -------
-        None
-        """
-
-        self.database_url = database_url
-        self.engine = create_engine(self.database_url)
+    def __init__(
+        self,
+        saving_dir: str = "data/",
+        database_file: str = "data.ddb",
+    ):
         self.saving_dir = saving_dir
-        self.debug = debug
-        self.dev = dev
-        self.update = update
+        self.data_file = database_file
+        self.conn = ibis.duckdb.connect(f"{self.data_file}")
 
-        if self.database_url.startswith("sqlite"):
-            self.conn = ibis.sqlite.connect(self.database_url.replace("sqlite:///", ""))
-        elif self.database_url.startswith("postgres"):
-            self.conn = ibis.postgres.connect(
-                user=self.database_url.split("://")[1].split(":")[0],
-                password=self.database_url.split("://")[1].split(":")[1].split("@")[0],
-                host=self.database_url.split("://")[1].split(":")[1].split("@")[1],
-                port=self.database_url.split("://")[1].split(":")[2].split("/")[0],
-                database=self.database_url.split("://")[1].split(":")[2].split("/")[1])
-        else:
-            raise Exception("Database url is not supported")
+        # Set up logging to log everything
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format="%(asctime)s - %(levelname)s - %(message)s",
+            datefmt="%d-%b-%y %H:%M:%S",
+            filename="data_process.log",
+        )
 
         # Check if the saving directory exists
         if not os.path.exists(self.saving_dir + "raw"):
@@ -60,29 +48,36 @@ class DataPull:
         if not os.path.exists(self.saving_dir + "external"):
             os.makedirs(self.saving_dir + "external")
 
-    def pull_acs(self) -> ibis.expr.types.relations.Table:
+    def pull_pumspr(self) -> ibis.expr.types.relations.Table:
+        if "pumstable" not in self.conn.list_tables():
+            init_pums_table(self.data_file)
+
         df = self.conn.table("pumstable")
         for _year in range(2012, 2024):
             if df.filter(df.year == _year).to_pandas().empty and _year != 2020:
                 try:
-                    self.conn.insert("pumstable", self.pull_request(params=['AGEP', 'SCH', 'SCHL', 'HINCP', 'PWGTP'], year=_year))
+                    yearly_df = self.pull_request(
+                        params=["AGEP", "SCH", "SCHL", "HINCP", "PWGTP"], year=_year
+                    )
+                    self.conn.insert("pumstable", yearly_df)
+                    logging.info(f"Succesfully inserted pumspr data for year {_year}")
                 except JSONDecodeError:
-                    print("\033[0;36mNOTICE: \033[0m" + f"The ACS for {_year} is not availabel")
+                    logging.error(f"Error pulling data for year {_year}")
                     continue
             else:
                 continue
         return self.conn.table("pumstable")
 
-    def pull_request(self, params:list, year:int) -> pl.DataFrame:
+    def pull_request(self, params: list, year: int) -> pl.DataFrame:
         param = ",".join(params)
         base = "https://api.census.gov/data/"
         flow = "/acs/acs1/pumspr"
-        url = f'{base}{year}{flow}?get={param}'
-        r = requests.get(url).json()  
+        url = f"{base}{year}{flow}?get={param}"
+        r = requests.get(url).json()
         df = pl.DataFrame(r)
         names = df.select(pl.col("column_0")).transpose()
         names = names.to_dicts().pop()
-        names = dict((k, v.lower()) for k,v in names.items())
+        names = dict((k, v.lower()) for k, v in names.items())
         df = df.drop("column_0").transpose()
         return df.rename(names).with_columns(year=pl.lit(year)).cast(pl.Int64)
 
@@ -93,15 +88,29 @@ class DataPull:
 
         # Pull data from the WB that are not in the database
         for _year in range(2012, datetime.now().year):
-            if not _year in list_year:
-                capita_df = wb.get_series('NY.GNP.PCAP.PP.CD', country='PR', simplify_index=True, date="2028")
-                constant_df = wb.get_series('NY.GNP.PCAP.PP.KD', country='PR', simplify_index=True, date="2028")
+            if _year not in list_year:
+                capita_df = wb.get_series(
+                    "NY.GNP.PCAP.PP.CD",
+                    country="PR",
+                    simplify_index=True,
+                    date=str(_year),
+                )
+                constant_df = wb.get_series(
+                    "NY.GNP.PCAP.PP.KD",
+                    country="PR",
+                    simplify_index=True,
+                    date=str(_year),
+                )
 
                 capita_df = pl.from_pandas(capita_df.reset_index())
                 constant_df = pl.from_pandas(constant_df.reset_index())
 
-                capita_df = capita_df.rename({"NY.GNP.PCAP.PP.CD": "capita", "Year": "year"})
-                constant_df = constant_df.rename({"NY.GNP.PCAP.PP.KD": "constant", "Year": "year"})
+                capita_df = capita_df.rename(
+                    {"NY.GNP.PCAP.PP.CD": "capita", "Year": "year"}
+                )
+                constant_df = constant_df.rename(
+                    {"NY.GNP.PCAP.PP.KD": "constant", "Year": "year"}
+                )
 
                 capita_df = capita_df.with_columns(pl.col("year").cast(pl.Int64))
                 constant_df = constant_df.with_columns(pl.col("year").cast(pl.Int64))
@@ -110,10 +119,10 @@ class DataPull:
                 self.conn.insert("gnitable", df)
 
                 # Logging
-                self.debug_log(message=f"inserted wb data for {_year}")
+                logging.info(f"Successfully inserted world bank data for year {_year}")
 
             else:
-                self.debug_log(message="Data is in the database")
+                logging.info(f"Data for year {_year} already exists in gnitable")
                 continue
         return self.conn.table("gnitable")
 
@@ -125,22 +134,26 @@ class DataPull:
         -------
         None
         """
-        if not os.path.exists('data/raw/life_exp.parquet'):
+        if not os.path.exists("data/raw/life_exp.parquet"):
             life_exp = pl.from_pandas(
-                pd.DataFrame(wb.get_series('SP.DYN.LE00.IN', country='PR', simplify_index=True).reset_index())
+                pd.DataFrame(
+                    wb.get_series(
+                        "SP.DYN.LE00.IN", country="PR", simplify_index=True
+                    ).reset_index()
+                )
             )
             life_exp = life_exp.rename({"SP.DYN.LE00.IN": "life_exp", "Year": "year"})
             life_exp = life_exp.with_columns(pl.col("year").cast(pl.Int64))
-            life_exp.write_parquet('data/raw/life_exp.parquet')
+            life_exp.write_parquet("data/raw/life_exp.parquet")
 
-            if self.debug:
-                print("\033[0;32mINFO: \033[0m" + f"Life expectancy data downloaded")
+            logging.info("Life expectancy data saved to data/raw/life_exp.parquet")
+
         else:
-            if self.debug:
-                print("\033[0;36mNOTICE: \033[0m" + f"File for life expectancy data already exists")
+            logging.info(
+                "Life expectancy data already exists in data/raw/life_exp.parquet"
+            )
 
-
-    def pull_file(self, url:str, filename:str, verify:bool=True) -> None:
+    def pull_file(self, url: str, filename: str, verify: bool = True) -> None:
         """
         Pulls a file from a URL and saves it in the filename. Used by the class to pull external files.
 
@@ -160,16 +173,19 @@ class DataPull:
         chunk_size = 10 * 1024 * 1024
 
         with requests.get(url, stream=True, verify=verify) as response:
-            total_size = int(response.headers.get('content-length', 0))
+            total_size = int(response.headers.get("content-length", 0))
 
-            with tqdm(total=total_size, unit='B', unit_scale=True, unit_divisor=1024, desc='Downloading') as bar:
-                with open(filename, 'wb') as file:
+            with tqdm(
+                total=total_size,
+                unit="B",
+                unit_scale=True,
+                unit_divisor=1024,
+                desc="Downloading",
+            ) as bar:
+                with open(filename, "wb") as file:
                     for chunk in response.iter_content(chunk_size=chunk_size):
                         if chunk:
                             file.write(chunk)
-                            bar.update(len(chunk))  # Update the progress bar with the size of the chunk
-
-    def debug_log(self, message:str) -> None:
-        if self.debug:
-            print(f"\033[0;36mINFO: \033[0m {message}")
-
+                            bar.update(
+                                len(chunk)
+                            )  # Update the progress bar with the size of the chunk

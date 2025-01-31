@@ -169,3 +169,5 @@ notebooks/*
 .DS_Store
 .vscode/
 *.sqlite
+*.ddb
+*.wal
