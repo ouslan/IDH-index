@@ -108,6 +108,10 @@ class DataPull:
                         simplify_index=True,
                         date=str(_year),
                     )
+                    pnb = pl.read_csv("data/external/pnb.csv")
+                    pnb = (
+                        pnb.filter(pl.col("year") == 2019).select(pl.col("pnb")).item()
+                    )
 
                     df_gni = pl.DataFrame(
                         [
@@ -115,6 +119,7 @@ class DataPull:
                             pl.Series("capita", [capita], dtype=pl.Float64),
                             pl.Series("constant", [constant], dtype=pl.Float64),
                             pl.Series("life_exp", [life_exp], dtype=pl.Float64),
+                            pl.Series("pnb", [pnb], dtype=pl.Float64),
                         ]
                     )
                     self.conn.insert("gnitable", df_gni)

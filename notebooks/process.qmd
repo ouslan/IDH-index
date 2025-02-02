@@ -1,0 +1,29 @@
+---
+title: "Duckdb development"
+format:
+  html:
+    code-fold: true
+jupyter: python3
+---
+
+```{python}
+import os
+os.chdir("..")
+```
+
+```{python}
+import polars as pl
+import ibis
+from src.data.data_pull import DataPull
+
+dp = DataPull()
+
+ibis.options.interactive = True
+```
+
+```{python}
+df = pl.read_csv("data/external/pnb.csv")
+df.filter(pl.col("year") == 2019).select(pl.col("pnb")).item()
+```
+
+

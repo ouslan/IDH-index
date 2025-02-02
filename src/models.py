@@ -35,7 +35,8 @@ def init_gni_table(db_path: str) -> None:
             year INTEGER,
             constant FLOAT,
             capita FLOAT,
-            life_exp FLOAT
+            life_exp FLOAT,
+            pnb INTEGER
         );
         """
     )
