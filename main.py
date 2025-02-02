@@ -1,7 +1,10 @@
-from src.data.data_process import DataProcess
+from src.data.data_pull import DataPull
 
-def main():
-    DataProcess(end_year=2023, debug=True)
+
+def main() -> None:
+    dp = DataPull()
+    dp.pull_pumspr()
+
 
 if __name__ == "__main__":
     main()
