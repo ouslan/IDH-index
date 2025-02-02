@@ -1,9 +1,9 @@
+from ..models import init_pums_table, init_gni_table
+from requests.exceptions import HTTPError
 from json import JSONDecodeError
-from ..models import init_pums_table
 from datetime import datetime
 import world_bank_data as wb
 from tqdm import tqdm
-import pandas as pd
 import polars as pl
 import logging
 import requests
@@ -53,7 +53,7 @@ class DataPull:
             init_pums_table(self.data_file)
 
         df = self.conn.table("pumstable")
-        for _year in range(2012, 2024):
+        for _year in range(2012, datetime.now().year):
             if df.filter(df.year == _year).to_pandas().empty and _year != 2020:
                 try:
                     yearly_df = self.pull_request(
@@ -83,75 +83,54 @@ class DataPull:
 
     def pull_wb(self) -> ibis.expr.types.relations.Table:
         # Get the list of years in db
+        if "gnitable" not in self.conn.list_tables():
+            init_gni_table(self.data_file)
+
         df = self.conn.table("gnitable")
-        list_year = df[["year"]].distinct().to_polars().to_numpy().transpose()[0]
-
-        # Pull data from the WB that are not in the database
         for _year in range(2012, datetime.now().year):
-            if _year not in list_year:
-                capita_df = wb.get_series(
-                    "NY.GNP.PCAP.PP.CD",
-                    country="PR",
-                    simplify_index=True,
-                    date=str(_year),
-                )
-                constant_df = wb.get_series(
-                    "NY.GNP.PCAP.PP.KD",
-                    country="PR",
-                    simplify_index=True,
-                    date=str(_year),
-                )
+            if df.filter(df.year == _year).to_pandas().empty and _year != 2020:
+                try:
+                    capita = wb.get_series(
+                        "NY.GNP.PCAP.PP.CD",
+                        country="PR",
+                        simplify_index=True,
+                        date=str(_year),
+                    )
+                    constant = wb.get_series(
+                        "NY.GNP.PCAP.PP.KD",
+                        country="PR",
+                        simplify_index=True,
+                        date=str(_year),
+                    )
+                    life_exp = wb.get_series(
+                        "SP.DYN.LE00.IN",
+                        country="PR",
+                        simplify_index=True,
+                        date=str(_year),
+                    )
 
-                capita_df = pl.from_pandas(capita_df.reset_index())
-                constant_df = pl.from_pandas(constant_df.reset_index())
-
-                capita_df = capita_df.rename(
-                    {"NY.GNP.PCAP.PP.CD": "capita", "Year": "year"}
-                )
-                constant_df = constant_df.rename(
-                    {"NY.GNP.PCAP.PP.KD": "constant", "Year": "year"}
-                )
-
-                capita_df = capita_df.with_columns(pl.col("year").cast(pl.Int64))
-                constant_df = constant_df.with_columns(pl.col("year").cast(pl.Int64))
-
-                df = capita_df.join(constant_df, on="year", how="inner", validate="1:1")
-                self.conn.insert("gnitable", df)
-
-                # Logging
-                logging.info(f"Successfully inserted world bank data for year {_year}")
+                    df_gni = pl.DataFrame(
+                        [
+                            pl.Series("year", [_year], dtype=pl.Int64),
+                            pl.Series("capita", [capita], dtype=pl.Float64),
+                            pl.Series("constant", [constant], dtype=pl.Float64),
+                            pl.Series("life_exp", [life_exp], dtype=pl.Float64),
+                        ]
+                    )
+                    self.conn.insert("gnitable", df_gni)
+                    # Logging
+                    logging.info(
+                        f"Successfully inserted world bank data for year {_year}"
+                    )
+                except HTTPError:
+                    logging.warning(
+                        f"Could not insert world bank data for year {_year}"
+                    )
 
             else:
                 logging.info(f"Data for year {_year} already exists in gnitable")
                 continue
         return self.conn.table("gnitable")
-
-    def life_exp(self) -> None:
-        """
-        Downloads and processes life expectancy data and saves it as a Parquet file.
-
-        Returns
-        -------
-        None
-        """
-        if not os.path.exists("data/raw/life_exp.parquet"):
-            life_exp = pl.from_pandas(
-                pd.DataFrame(
-                    wb.get_series(
-                        "SP.DYN.LE00.IN", country="PR", simplify_index=True
-                    ).reset_index()
-                )
-            )
-            life_exp = life_exp.rename({"SP.DYN.LE00.IN": "life_exp", "Year": "year"})
-            life_exp = life_exp.with_columns(pl.col("year").cast(pl.Int64))
-            life_exp.write_parquet("data/raw/life_exp.parquet")
-
-            logging.info("Life expectancy data saved to data/raw/life_exp.parquet")
-
-        else:
-            logging.info(
-                "Life expectancy data already exists in data/raw/life_exp.parquet"
-            )
 
     def pull_file(self, url: str, filename: str, verify: bool = True) -> None:
         """

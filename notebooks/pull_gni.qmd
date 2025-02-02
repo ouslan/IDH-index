@@ -6,44 +6,76 @@ format:
 jupyter: python3
 ---
 
+```{python}
+import os
+os.chdir("..")
+```
 
 ```{python}
 import world_bank_data as wb
+from src.data.data_pull import DataPull
 import polars as pl
+import pandas as pd
+import os
 import ibis
 
 ibis.options.interactive = True
-ibis.set_backend("sqlite")
+dp = DataPull()
 ```
 
+
 ```{python}
-conn = ibis.sqlite.connect("db.sqlite")
+dp.conn.table("gnitable")
 ```
 
+
 ```{python}
-capita_df = wb.get_series('NY.GNP.PCAP.PP.CD', country='PR', simplify_index=True, date="2028")
-constant_df = wb.get_series('NY.GNP.PCAP.PP.KD', country='PR', simplify_index=True, date="2028")
+_year = 2019
+capita = wb.get_series(
+    "NY.GNP.PCAP.PP.CD",
+    country="PR",
+    simplify_index=True,
+    date=str(_year),
+)
+constant = wb.get_series(
+    "NY.GNP.PCAP.PP.KD",
+    country="PR",
+    simplify_index=True,
+    date=str(_year),
+)
+life_exp = wb.get_series(
+            "SP.DYN.LE00.IN", 
+              country="PR",
+  simplify_index=True,
+  date=str(_year)
+                    )
 
-capita_df = pl.from_pandas(capita_df.reset_index())
-constant_df = pl.from_pandas(constant_df.reset_index())
 
-capita_df = capita_df.rename({"NY.GNP.PCAP.PP.CD": "capita", "Year": "year"})
-constant_df = constant_df.rename({"NY.GNP.PCAP.PP.KD": "constant", "Year": "year"})
-
-capita_df = capita_df.with_columns(pl.col("year").cast(pl.Int64))
-constant_df = constant_df.with_columns(pl.col("year").cast(pl.Int64))
-
-df = capita_df.join(constant_df, on="year", how="inner", validate="1:1")
-df
+df = pl.DataFrame([
+  pl.Series("year", [_year], dtype=pl.Int64),
+  pl.Series("capita", [capita], dtype=pl.Float64),
+  pl.Series("constant", [constant], dtype=pl.Float64),
+  pl.Series("life_exp", [life_exp], dtype=pl.Float64)
+  ])
+print(df)
 ```
 
-```{python}
-conn.insert("gnitable", df)
-```
 
 ```{python}
-df = conn.table("gnitable")
-list_year = df[["year"]].distinct().to_polars().to_numpy().transpose()[0]
-if 2019 in list_year:
-  print("yeas")
+_year = 2019
+country = "PR"
+
+# List of series to fetch
+indicators = [
+    "NY.GNP.PCAP.PP.CD",  # GNP per capita (current USD)
+    "NY.GNP.PCAP.PP.KD",  # GNP per capita (constant USD)
+    "SP.DYN.LE00.IN",     # Life expectancy at birth
+]
+
+# Fetch all series at once
+data = wb.get_series(indicators, country=country, simplify_index=True, date=str(_year))
+
+# Now 'data' contains the data for all the series
+print(data)
+
 ```
