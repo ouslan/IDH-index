@@ -12,7 +12,6 @@ os.chdir("..")
 ```
 
 ```{python}
-import polars as pl
 import ibis
 from src.data.data_pull import DataPull
 
@@ -22,8 +21,86 @@ ibis.options.interactive = True
 ```
 
 ```{python}
-df = pl.read_csv("data/external/pnb.csv")
-df.filter(pl.col("year") == 2019).select(pl.col("pnb")).item()
+df = dp.pull_wb()
+win = ibis.window(order_by=df.year, following=0)
+grouped = df.mutate(grouper=df.life_exp.count().over(win))
+df = grouped.group_by([grouped.grouper]).mutate(life_exp=grouped.life_exp.max())
+df = df.mutate(
+    health_index=(df.life_exp - 20) / (85 - 20),
+    health_index_adjusted=(df.life_exp - 20) / (85 - 20) * (1-0.08)
+)
+df
+```
+
+```{python}
+# Adjust the income index
+empty = [
+    pl.Series("year", [], dtype=pl.Int64),
+    pl.Series("coef", [], dtype=pl.Float64),
+    pl.Series("atkinson", [], dtype=pl.Float64),
+]
+adjusted_df = pl.DataFrame(empty)
+capita_df = pl.read_parquet("data/raw/gni_capita.parquet")
+constant_df = pl.read_parquet("data/raw/gni_constant.parquet")
+
+for file in os.listdir("data/raw/"):
+    if file.startswith("data_hpr"):
+        adjust_df = pl.read_csv(f"data/raw/{file}")
+        adjust_df = adjust_df.select(pl.col("HINCP").drop_nulls())
+        adjust_df = adjust_df.sort("HINCP")
+        adjust_df = adjust_df.filter(pl.col("HINCP") > 0)
+
+        # Replace bottom 0.5%
+        bottom_max = adjust_df.select(pl.col("HINCP").quantile(0.005))
+        adjust_df = adjust_df.select(
+            pl.when(pl.col("HINCP") < bottom_max)
+            .then(bottom_max)
+            .otherwise(pl.col("HINCP"))
+            .alias("HINCP")
+        )
+
+        # Drop top 0.5%
+        adjust_df = adjust_df.filter(
+            pl.col("HINCP") <= pl.col("HINCP").quantile(0.995)
+        )
+
+        # Get coefficient of adjustment
+        coef, amean, gemetric, atkinson = self.adjust(adjust_df)
+        tmp_df = pl.DataFrame(
+            {
+                "year": int(file.split("_")[2]),
+                "coef": coef[0][0],
+                "atkinson": atkinson[0][0],
+            }
+        )
+
+        adjusted_df = pl.concat([adjusted_df, tmp_df], how="vertical")
+
+# Merge the two dataframes
+inc_df = capita_df.join(constant_df, on="year")
+inc_df = inc_df.with_columns(
+    (pl.col("constant") / pl.col("capita")).alias("income_ratio")
+)
+
+# Merge the income index with the pnb.csv file
+pnb = pl.read_csv("data/external/pnb.csv")
+merge_df = inc_df.join(pnb, on="year", how="left").drop_nulls()
+merge_df = merge_df.join(adjusted_df, on="year", how="left")
+
+# Calculate the index
+merge_df = merge_df.with_columns(
+    (
+        (np.log(pl.col("pnb")) - np.log(100)) / (np.log(75000) - np.log(100))
+    ).alias("index")
+)
+merge_df = merge_df.with_columns(
+    (pl.col("index") * pl.col("coef")).alias("income_index_adjusted")
+)
+merge_df = merge_df.select(
+    pl.col("year", "index", "income_index_adjusted")
+).drop_nulls()
+
+merge_df.write_csv("data/processed/income_index.csv")
 ```
 
 
