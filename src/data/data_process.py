@@ -281,9 +281,6 @@ class DataProcess(DataPull):
 
         df.to_csv("data/processed/idh_index.csv", index=False)
 
-        if self.debug:
-            print("\033[0;32mINFO: \033[0m" + "HDI index data is processed")
-
     def adjust(self, df: pl.DataFrame) -> tuple:
         """
         Calculates adjustment coefficients for income or education data.

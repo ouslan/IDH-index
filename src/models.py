@@ -18,7 +18,8 @@ def init_pums_table(db_path: str) -> None:
             sch INTEGER,
             schl INTEGER,
             hincp INTEGER,
-            pwgtp INTEGER
+            pwgtp INTEGER,
+            puma INTEGER
         );
         """
     )

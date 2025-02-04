@@ -57,7 +57,7 @@ class DataPull:
             if df.filter(df.year == _year).to_pandas().empty and _year != 2020:
                 try:
                     yearly_df = self.pull_request(
-                        params=["AGEP", "SCH", "SCHL", "HINCP", "PWGTP"], year=_year
+                        params=["AGEP", "SCH", "SCHL", "HINCP", "PWGTP", "PUMA"], year=_year
                     )
                     self.conn.insert("pumstable", yearly_df)
                     logging.info(f"Succesfully inserted pumspr data for year {_year}")

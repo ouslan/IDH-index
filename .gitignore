@@ -171,3 +171,4 @@ notebooks/*
 *.sqlite
 *.ddb
 *.wal
+data/external/*

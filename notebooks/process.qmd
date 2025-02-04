@@ -13,7 +13,10 @@ os.chdir("..")
 
 ```{python}
 import ibis
+import polars as pl
+import geopandas as gpd
 from src.data.data_pull import DataPull
+from scipy.stats import gmean
 
 dp = DataPull()
 
@@ -33,74 +36,114 @@ df
 ```
 
 ```{python}
-# Adjust the income index
+def adjust(df,df2):
+    """
+    Calculates adjustment coefficients for income or education data.
+
+    Parameters
+    ----------
+    df : pl.DataFrame
+        The dataframe of data to adjust.
+
+    Returns
+    -------
+    tuple
+        A tuple containing coefficients: (coef, amean, gemetric, atkinson).
+    """
+    gemetric = gmean(df,weights=df2)
+    amean = df.mean()
+    atkinson = 1 - gemetric / amean
+    coef = 1 - atkinson
+    return coef
+```
+
+```{python}
 empty = [
     pl.Series("year", [], dtype=pl.Int64),
     pl.Series("coef", [], dtype=pl.Float64),
     pl.Series("atkinson", [], dtype=pl.Float64),
 ]
 adjusted_df = pl.DataFrame(empty)
-capita_df = pl.read_parquet("data/raw/gni_capita.parquet")
-constant_df = pl.read_parquet("data/raw/gni_constant.parquet")
 
-for file in os.listdir("data/raw/"):
-    if file.startswith("data_hpr"):
-        adjust_df = pl.read_csv(f"data/raw/{file}")
-        adjust_df = adjust_df.select(pl.col("HINCP").drop_nulls())
-        adjust_df = adjust_df.sort("HINCP")
-        adjust_df = adjust_df.filter(pl.col("HINCP") > 0)
+for _year in range(2012,2024):
+    adjust_df = dp.pull_pumspr()
+    adjust_df = adjust_df.filter(adjust_df.year == _year)
+    adjust_df = adjust_df.filter(pl.col("hincp") > 0)
 
-        # Replace bottom 0.5%
-        bottom_max = adjust_df.select(pl.col("HINCP").quantile(0.005))
-        adjust_df = adjust_df.select(
-            pl.when(pl.col("HINCP") < bottom_max)
-            .then(bottom_max)
-            .otherwise(pl.col("HINCP"))
-            .alias("HINCP")
-        )
+    # Replace bottom 0.5%
+    bottom_max = adjust_df.select(pl.col("hincp").quantile(0.005))
+    adjust_df = adjust_df.with_columns(
+        pl.when(pl.col("hincp") < bottom_max)
+        .then(bottom_max)
+        .otherwise(pl.col("hincp"))
+        .alias("hincp")
+    )
 
-        # Drop top 0.5%
-        adjust_df = adjust_df.filter(
-            pl.col("HINCP") <= pl.col("HINCP").quantile(0.995)
-        )
+    # Drop top 0.5%
+    adjust_df = adjust_df.filter(
+        pl.col("hincp") <= pl.col("hincp").quantile(0.995)
+    )
 
-        # Get coefficient of adjustment
-        coef, amean, gemetric, atkinson = self.adjust(adjust_df)
-        tmp_df = pl.DataFrame(
-            {
-                "year": int(file.split("_")[2]),
-                "coef": coef[0][0],
-                "atkinson": atkinson[0][0],
-            }
-        )
+    # Get coefficient of adjustment
+    coef, amean, gemetric, atkinson = adjust(adjust_df)
+    tmp_df = pl.DataFrame(
+        {
+            "year": _year,
+            "coef": coef[0][0],
+            "atkinson": atkinson[0][0],
+        }
+    )
 
-        adjusted_df = pl.concat([adjusted_df, tmp_df], how="vertical")
-
-# Merge the two dataframes
-inc_df = capita_df.join(constant_df, on="year")
-inc_df = inc_df.with_columns(
-    (pl.col("constant") / pl.col("capita")).alias("income_ratio")
-)
-
-# Merge the income index with the pnb.csv file
-pnb = pl.read_csv("data/external/pnb.csv")
-merge_df = inc_df.join(pnb, on="year", how="left").drop_nulls()
-merge_df = merge_df.join(adjusted_df, on="year", how="left")
-
-# Calculate the index
-merge_df = merge_df.with_columns(
-    (
-        (np.log(pl.col("pnb")) - np.log(100)) / (np.log(75000) - np.log(100))
-    ).alias("index")
-)
-merge_df = merge_df.with_columns(
-    (pl.col("index") * pl.col("coef")).alias("income_index_adjusted")
-)
-merge_df = merge_df.select(
-    pl.col("year", "index", "income_index_adjusted")
-).drop_nulls()
-
-merge_df.write_csv("data/processed/income_index.csv")
+    adjusted_df = pl.concat([adjusted_df, tmp_df], how="vertical")
+adjusted_df
 ```
 
 
+```{python}
+_year = 2021
+adjust_df = dp.pull_pumspr()
+adjust_df = adjust_df.filter(adjust_df.year == _year).to_polars()
+adjust_df = adjust_df.filter(pl.col("hincp") > 0)
+
+# Replace bottom 0.5%
+bottom_max = adjust_df.select(pl.col("hincp").quantile(0.005))
+adjust_df = adjust_df.with_columns(
+    pl.when(pl.col("hincp") < bottom_max)
+    .then(bottom_max)
+    .otherwise(pl.col("hincp"))
+    .alias("hincp")
+)
+
+# Drop top 0.5%
+adjust_df = adjust_df.filter(
+    pl.col("hincp") <= pl.col("hincp").quantile(0.995)
+)
+
+# # Get coefficient of adjustment
+# coef, amean, gemetric, atkinson = adjust(adjust_df)
+# tmp_df = pl.DataFrame(
+#     {
+#         "year": _year,
+#         "coef": coef[0][0],
+#         "atkinson": atkinson[0][0],
+#     }
+# )
+
+# tmp_df
+adjust_df = adjust_df.group_by("puma").agg(coef=pl.struct(["hincp", "pwgtp"]).map_batches(
+        lambda combined: adjust(
+            combined.struct.field("hincp"), combined.struct.field("pwgtp")
+        )
+    )
+    .alias("add_columns"))
+adjust_df = adjust_df.with_columns(
+    puma=pl.col("puma").cast(pl.String).str.zfill(5)).explode("coef")
+adjust_df.to_pandas()
+```
+
+```{python}
+tmp = adjust_df.to_pandas()
+gdf = gpd.read_file("data/external/tl_2019_72_puma10.zip")
+gdf = gdf[["PUMACE10","NAMELSAD10", "geometry"]].rename(columns={"PUMACE10":"puma","NAMELSAD10":"name"})
+gdf.merge(tmp, on="puma").plot("coef")
+```
